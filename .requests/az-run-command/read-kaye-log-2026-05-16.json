@@ -1,0 +1,1 @@
+{"vm":"openclaw-vm","rg":"SDNeurosurgery-OpenClaw","script":"cat /tmp/async-Build-Kaye-Claude-bot-20260516-162542.log 2>&1 | head -c 8000"}
