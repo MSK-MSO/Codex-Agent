@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "=== grep for stale GUID in scripts ===\n\n=== grep in async log dir ===\n6:ERROR: Resource '3346b82e-6e4a-4800-ad59-53e5cffc7efb' does not exist or one of its queried reference-property objects are not present.\n\n=== any deploy scripts ===\n-rwxr-xr-x 1 root root 4015 Apr 24 20:02 /home/azureuser/avd-rebuild-rename.sh",
+  "stderr": ""
+}
