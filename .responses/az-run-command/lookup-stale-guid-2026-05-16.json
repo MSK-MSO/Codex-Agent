@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "=== try as app ===\n{\n  \"@odata.context\": \"https://graph.microsoft.com/v1.0/$metadata#applications/$entity\",\n  \"addIns\": [],\n\n=== try as sp ===\nERROR: Resource '3346b82e-6e4a-4800-ad59-53e5cffc7efb' does not exist or one of its queried reference-property objects are not present.\n\n=== try as graph object ===\n{\n  \"@odata.context\": \"https://graph.microsoft.com/v1.0/$metadata#directoryObjects/$entity\",\n  \"@odata.type\": \"#microsoft.graph.application\",\n  \"addIns\": [],\n  \"api\": {\n    \"acceptMappedClaims\": null,\n    \"knownClientApplications\": [],\n    \"oauth2PermissionScopes\": [],\n    \"preAuthorizedApplications\": [],\n    \"requestedAccessTokenVersion\": null\n\n=== bot recent shell commands ===",
+  "stderr": ""
+}
