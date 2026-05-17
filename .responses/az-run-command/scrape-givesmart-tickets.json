@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "--- ticket/buy links ---\n--- data-* attrs with prices ---\n--- common GiveSmart endpoints ---\nhttps://e.givesmart.com/events/KHN/tickets = 9030 bytes\nhttps://e.givesmart.com/events/KHN/store = 9028 bytes\nhttps://e.givesmart.com/events/KHN/items = 9028 bytes\nhttps://e.givesmart.com/events/KHN/buy = 9026 bytes\nhttps://e.givesmart.com/events/KHN/buyTickets = 9033 bytes\nhttps://e.givesmart.com/events/KHN/purchase = 9031 bytes",
+  "stderr": "grep: warning: ? at start of expression\ngrep: warning: ? at start of expression"
+}
