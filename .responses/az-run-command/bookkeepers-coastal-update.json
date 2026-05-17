@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "{\"id\":\"1778994238481\"}\n__HTTP_CODE__:201",
+  "stderr": "using chat-id: 19:a09f5f2be802437ca1fed30d6d61529f@thread.v2\ninstalling bot in chat...\n{\"error\":{\"code\":\"NotFound\",\"message\":\"NotFound\",\"innerError\":{\"code\":\"AppDefinitionDoesntExist\",\"date\":\"2026-05-17T05:03:54\",\"request-id\":\"c43668bf-0e06-48db-85f3-fd782c4ded34\",\"client-request-id\":\"c43668bf-0e06-48db-85f3-fd782c4ded34\"}}}HTTP 404"
+}
