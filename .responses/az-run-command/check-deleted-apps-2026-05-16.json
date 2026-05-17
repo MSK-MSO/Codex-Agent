@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "=== recent soft-deleted apps ===\nERROR: Bad Request({\"error\":{\"code\":\"Request_UnsupportedQuery\",\"message\":\"Sorting not supported for 'Application'.\",\"innerError\":{\"date\":\"2026-05-17T00:20:02\",\"request-id\":\"cdae9ab5-e534-4f48-9cc1-a8096fbf0e92\",\"client-request-id\":\"cdae9ab5-e534-4f48-9cc1-a8096fbf0e92\"}}})",
+  "stderr": ""
+}
