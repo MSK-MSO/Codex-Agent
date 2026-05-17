@@ -1,0 +1,5 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "script": "ls -la /home/azureuser/yooai-send-to.sh /home/azureuser/yooai-bot-send.sh 2>&1; echo '---'; head -40 /home/azureuser/yooai-send-to.sh 2>&1"
+}
