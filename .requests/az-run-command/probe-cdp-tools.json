@@ -1,0 +1,5 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "script": "set +e; ls -la /home/azureuser/cdp-eval.py /home/azureuser/agent-browser 2>&1; echo '---'; which playwright; python3 -c 'import playwright; print(playwright.__version__)' 2>&1; python3 -c 'import pychrome; print(\"pychrome\", pychrome.__version__)' 2>&1; echo '--- port 9222 ---'; curl -s --max-time 3 http://127.0.0.1:9222/json/version 2>&1 | head -10"
+}
