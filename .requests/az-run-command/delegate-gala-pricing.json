@@ -1,0 +1,5 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "script": "TOKEN=$(/home/azureuser/yoomd-graph-token.sh) && curl -s -o /tmp/post-out.json -w '%{http_code}' -X POST 'https://graph.microsoft.com/v1.0/chats/19:c7f5f9e1dbd347d88f22bd0b4cd86e87@thread.v2/messages' -H \"Authorization: Bearer $TOKEN\" -H 'Content-Type: application/json' -d '{\"body\":{\"contentType\":\"text\",\"content\":\"Please open https://e.givesmart.com/events/KHN/ and report the ticket and sponsorship prices for the Champions for Health United in Wellness Gala (June 27, 2026 at SD Air & Space Museum). I especially want to know how many seats are included at the $2,500 table tier. Reply back here with the breakdown.\"}}'; echo; echo '--- response ---'; cat /tmp/post-out.json"
+}
