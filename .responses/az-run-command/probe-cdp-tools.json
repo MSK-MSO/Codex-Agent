@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "ls: cannot access '/home/azureuser/cdp-eval.py': No such file or directory\nls: cannot access '/home/azureuser/agent-browser': No such file or directory\n---\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'playwright'\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'pychrome'\n--- port 9222 ---",
+  "stderr": ""
+}
