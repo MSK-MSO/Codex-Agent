@@ -1,0 +1,5 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "script": "/home/azureuser/yooai-send-to.sh \"Dr. Yoo is asking for an update on the Coastal Medical Group invoices — three pending: May rental, March excess, and April excess. Could you (Musaab/Ibrahim/Kaushika) confirm current status and any AP responses since the May 15 chase email? Thanks.\" \"19:a09f5f2be802437ca1fed30d6d61529f@thread.v2\""
+}
