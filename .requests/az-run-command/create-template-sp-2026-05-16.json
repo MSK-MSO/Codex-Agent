@@ -1,0 +1,1 @@
+{"vm":"openclaw-vm","rg":"SDNeurosurgery-OpenClaw","script":"set +e; echo === creating missing template SP ===; az ad sp create --id 3346b82e-6e4a-4800-ad59-53e5cffc7efb --output json 2>&1 | head -c 800; echo; echo === verify ===; az ad sp show --id 3346b82e-6e4a-4800-ad59-53e5cffc7efb --query '{id:id,displayName:displayName,appId:appId}' -o json 2>&1"}
