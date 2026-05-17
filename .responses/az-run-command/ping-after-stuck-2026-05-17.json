@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "proxy-alive\nSun May 17 01:13:19 UTC 2026",
+  "stderr": ""
+}
