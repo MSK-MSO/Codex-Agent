@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 0,
+  "stdout": "201\n--- response ---\n{\"@odata.context\":\"https://graph.microsoft.com/v1.0/$metadata#chats('19%3Ac7f5f9e1dbd347d88f22bd0b4cd86e87%40thread.v2')/messages/$entity\",\"id\":\"1779031101654\",\"replyToId\":null,\"etag\":\"1779031101654\",\"messageType\":\"message\",\"createdDateTime\":\"2026-05-17T15:18:21.654Z\",\"lastModifiedDateTime\":\"2026-05-17T15:18:21.654Z\",\"lastEditedDateTime\":null,\"deletedDateTime\":null,\"subject\":null,\"summary\":null,\"chatId\":\"19:c7f5f9e1dbd347d88f22bd0b4cd86e87@thread.v2\",\"importance\":\"normal\",\"locale\":\"en-us\",\"webUrl\":null,\"channelIdentity\":null,\"policyViolation\":null,\"eventDetail\":null,\"from\":{\"application\":null,\"device\":null,\"user\":{\"@odata.type\":\"#microsoft.graph.teamworkUserIdentity\",\"id\":\"e0d48eb4-1eb3-4263-a72e-f6ad4ef32238\",\"displayName\":\"Dr. Kevin Yoo, SDN\",\"userIdentityType\":\"aadUser\",\"tenantId\":\"50186224-2255-444a-b321-60a84114115c\"}},\"body\":{\"contentType\":\"text\",\"content\":\"Please open https://e.givesmart.com/events/KHN/ and report the ticket and sponsorship prices for the Champions for Health United in Wellness Gala (June 27, 2026 at SD Air & Space Museum). I especially want to know how many seats are included at the $2,500 table tier. Reply back here with the breakdown.\"},\"attachments\":[],\"mentions\":[],\"reactions\":[]}",
+  "stderr": ""
+}
