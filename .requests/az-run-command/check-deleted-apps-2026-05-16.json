@@ -1,0 +1,1 @@
+{"vm":"openclaw-vm","rg":"SDNeurosurgery-OpenClaw","script":"echo === recent soft-deleted apps ===; az rest --method GET --uri 'https://graph.microsoft.com/v1.0/directory/deletedItems/microsoft.graph.application?$select=id,appId,displayName,deletedDateTime&$orderby=deletedDateTime desc&$top=10' 2>&1 | head -60"}
