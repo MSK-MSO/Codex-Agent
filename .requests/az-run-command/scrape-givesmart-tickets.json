@@ -1,0 +1,5 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "script": "set +e; URL='https://e.givesmart.com/events/KHN/'; sudo -u azureuser /usr/bin/google-chrome --headless=new --disable-gpu --no-sandbox --virtual-time-budget=15000 --dump-dom \"$URL\" 2>/dev/null > /tmp/giv1.html; echo '--- ticket/buy links ---'; grep -oE 'href=\"[^\"]*(?:ticket|buy|cart|store|item)[^\"]*\"' /tmp/giv1.html | sort -u | head -30; echo '--- data-* attrs with prices ---'; grep -oE 'data-[a-z-]+=\"[^\"]*(?:price|amount|ticket)[^\"]*\"' /tmp/giv1.html | sort -u | head -20; echo '--- common GiveSmart endpoints ---'; for endpoint in /tickets /store /items /buy /buyTickets /purchase; do u2=\"https://e.givesmart.com/events/KHN${endpoint}\"; size=$(sudo -u azureuser /usr/bin/google-chrome --headless=new --disable-gpu --no-sandbox --virtual-time-budget=10000 --dump-dom \"$u2\" 2>/dev/null | wc -c); echo \"$u2 = $size bytes\"; done"
+}
