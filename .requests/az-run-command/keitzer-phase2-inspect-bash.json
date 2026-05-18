@@ -1,0 +1,5 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "script": "bash -lc 'set -euo pipefail; echo "=== health cameron ==="; bash /home/azureuser/bot-health-check.sh cameron; echo; echo "=== keitzer files ==="; ls -la /home/azureuser/.keitzer-bot /home/azureuser/keitzer-* /etc/systemd/system/keitzer-*.service 2>&1 || true; echo; echo "=== cameron units ==="; systemctl cat cameron-bot.service cameron-responder.service; echo; echo "=== cameron route ==="; grep -n "cameron/api/messages" /etc/nginx/sites-enabled/openclaw-sdneuro 2>&1 || true; echo; echo "=== listening ports ==="; ss -tlnp | grep -E "127\\.0\\.0\\.1:[0-9]+" | sort -u; echo; echo "=== bot scripts ==="; ls -1 /home/azureuser/*-{bot.py,responder.py,send-to.sh} 2>/dev/null | sed -n "1,120p"'"
+}
