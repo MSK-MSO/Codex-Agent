@@ -1,0 +1,7 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "ERROR: (ScopeLocked) The scope '/subscriptions/15a60cd5-8766-431b-a003-49f4f1b1890f/resourceGroups/SDNeurosurgery-OpenClaw/providers/Microsoft.Compute/virtualMachines/openclaw-vm' cannot perform write operation because following scope(s) are locked: '/subscriptions/15a60cd5-8766-431b-a003-49f4f1b1890f/resourcegroups/SDNEUROSURGERY-OPENCLAW/providers/Microsoft.Compute/virtualMachines/openclaw-vm'. Please remove the lock and try again.\nCode: ScopeLocked\nMessage: The scope '/subscriptions/15a60cd5-8766-431b-a003-49f4f1b1890f/resourceGroups/SDNeurosurgery-OpenClaw/providers/Microsoft.Compute/virtualMachines/openclaw-vm' cannot perform write operation because following scope(s) are locked: '/subscriptions/15a60cd5-8766-431b-a003-49f4f1b1890f/resourcegroups/SDNEUROSURGERY-OPENCLAW/providers/Microsoft.Compute/virtualMachines/openclaw-vm'. Please remove the lock and try again."
+}
