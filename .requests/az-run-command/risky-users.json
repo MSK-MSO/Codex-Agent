@@ -1,0 +1,5 @@
+{
+  "vm": "openclaw-vm",
+  "rg": "SDNeurosurgery-OpenClaw",
+  "script": "set +e; for getter in /home/azureuser/yoomd-app-token.sh /home/azureuser/yoomd-graph-token.sh; do if [ -x \"$getter\" ]; then echo \"=== using $getter ===\"; TOKEN=$($getter 2>/dev/null); R=$(curl -s -H \"Authorization: Bearer $TOKEN\" 'https://graph.microsoft.com/v1.0/identityProtection/riskyUsers?$top=20&$orderby=riskLastUpdatedDateTime%20desc'); echo \"$R\" | python3 -c \"import sys,json; d=json.loads(sys.stdin.read()); v=d.get('value', []); print(f'fetched {len(v)} risky users'); [print(f'- {u.get(\\\"userDisplayName\\\")} ({u.get(\\\"userPrincipalName\\\")}) | risk={u.get(\\\"riskLevel\\\")} | state={u.get(\\\"riskState\\\")} | detail={u.get(\\\"riskDetail\\\")} | lastUpdated={u.get(\\\"riskLastUpdatedDateTime\\\")}') for u in v]\" 2>&1; if echo \"$R\" | grep -q '\"value\"'; then break; fi; fi; done"
+}
