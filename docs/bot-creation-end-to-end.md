@@ -17,8 +17,8 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
    - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI API. Naming convention: `<Firstname>'s Open AI Agent` (matches the existing Yoo / Neil OpenAI bots) or `<Firstname> Codex`.
 
 2. **Which model account / credentials** should back the bot?
-   - For Claude: which Claude OAuth account / `/etc/claude-tokens/<short>.env` entry? Each per-user bot needs its own token file. Reuse-from-existing is allowed but track it — quota is per token.
-   - For Codex: which OpenAI / Codex account, plan tier, and API key? Multiple accounts exist; pick one and note billing/quota implications. The key goes in the vault (e.g. `SDN-SharedVault/<short>-openai-api-key` or per-bot equivalent — confirm location with Dr. Yoo).
+   - For Claude: which Claude OAuth account / `/etc/claude-tokens/<short>.env` entry? Each per-user bot needs its own token file. Reuse-from-existing is allowed but track it — quota is per account.
+   - For Codex: which **OpenAI account** — `YooMD`'s or `MSO`'s? Codex-based bots authenticate via Codex CLI's account login (same as `~/.codex/auth.json`), **not** a raw API key. Both accounts have separate quota and billing. Pick one and note billing/quota implications. There is no third option (no API-key path is in use).
 
 3. **Which VM** hosts the new bot?
    - Default for Claude: `openclaw-vm` (resource group `SDNeurosurgery-OpenClaw`).
@@ -87,7 +87,7 @@ Run `scripts/bot-health-check.sh` against any existing working bot on the **targ
 ### 0.4 — Does the model account / API credential work right now?
 
 - **Claude**: confirm the chosen `/etc/claude-tokens/<short>.env` mints (use any working bot's token to sanity-check the Anthropic API is reachable from the target VM).
-- **Codex**: confirm the chosen OpenAI API key returns 200 from a `models` list call. If 401/429 — escalate before building. A key with no quota produces "Had trouble generating a reply" downstream, which is then mistaken for a publishing problem.
+- **Codex**: confirm the chosen OpenAI account (YooMD or MSO) is signed in via Codex CLI on the target VM — `cat ~/.codex/auth.json` (under the right per-user home) should show a valid `access_token` + `refresh_token` and the matching `account_id`. Then run a `codex --print "hello"` smoke test as that user to confirm the account hasn't been logged out or rate-limited. A dead account produces "Had trouble generating a reply" downstream, which is then mistaken for a publishing problem.
 
 ---
 
