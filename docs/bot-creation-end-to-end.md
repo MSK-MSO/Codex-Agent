@@ -26,7 +26,11 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
    - If Dr. Yoo wants the bot on a non-default VM (e.g., a fresh per-bot VM, or alongside another Codex bot), confirm explicitly — don't guess.
 
 4. **Does the user already have a bot of the same variant?**
-   - Check Teams app catalog AND systemd services on the chosen VM. If yes, ask: tear it down first, keep both side-by-side, or rename the existing one. Do not silently build a duplicate — it pollutes the catalog and confuses installation.
+   - Check Teams app catalog AND systemd services on the chosen VM. If yes, ask: keep both side-by-side, or rename the existing one. **Do NOT propose tearing it down** — see the hard rule below.
+   - Do not silently build a duplicate — it pollutes the catalog and confuses installation.
+
+> **HARD RULE — never tear down an existing bot unless Dr. Yoo explicitly tells you to.**
+> Even if a bot looks idle, broken, half-built, abandoned, deprecated, duplicate, or "obviously" superseded — leave it running. Dr. Yoo may be using it, someone on staff may be using it, or it may be load-bearing for a workflow you can't see from here. Building a new variant next to it is the default. Tearing down is a separate decision that requires an explicit verbal order from Dr. Yoo for that specific bot. Renames count as destructive too — they trigger a fresh catalog upload and can quarantine the entry.
 
 5. **Display name** (the Teams catalog name — **picked once, never renamed**).
    - **Convention is fixed: `<Firstname> Claude` for Claude-based, `<Firstname> Codex` for Codex-based.** Examples: Zahid Claude / Zahid Codex, Cameron Claude / Cameron Codex. Do not invent variants — keep both bot families on the same `<Firstname> <Variant>` pattern so the fleet stays readable.
@@ -401,6 +405,7 @@ None, currently. Tier 2 covers every authorized bot in the fleet. If you ever wa
 
 ## Anti-patterns to never do
 
+- **Tear down an existing bot to "make room" for a new variant.** Never. See the hard rule in "ASK FIRST" — leave existing bots running unless Dr. Yoo explicitly orders that specific bot torn down. The default for "user already has a bot of this variant" is keep-both-side-by-side (same pattern as Neil with Neil Claude + Neil Codex).
 - **Delete-and-reupload to fix a manifest bug.** Use `POST /teamsApps/{id}/appDefinitions` for version bumps.
 - **Retry an install that returned 403.** First verify the app exists with `GET /teamsApps/{id}`.
 - **Trust `systemctl is-active`.** It's true ~30-50% of the time during crash loops. Use `bot-health-check.sh`.
