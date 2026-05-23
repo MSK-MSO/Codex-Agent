@@ -1,18 +1,53 @@
-# Creating a new personal Claude bot — end-to-end playbook
+# Creating a new personal AI bot — end-to-end playbook (Claude or Codex)
 
 This is the canonical sequence for "Dr. Yoo wants a new bot for <user>." Follow it top-to-bottom. **Don't reorder, don't skip preflight, don't improvise.** Every step has a verify gate; if a gate fails, stop and escalate — do not retry.
 
 The 2026-05-11 incident (Jose / Axel / Lia / Afrah Claude bots stuck for hours behind Microsoft's tenant policy gate, with MSO Claude making the problem worse by repeatedly retrying) is the failure mode this playbook prevents.
 
+This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed, runs on `openclaw-vm`) and a **Codex-based** bot (OpenAI-backed, runs on `openclaw-openai-vm` post-migration). The preflight, manifest, catalog publish, and install phases are identical. The Entra app credentials, VM placement, model account, and responder code diverge starting in Phase 1.
+
+---
+
+## ASK FIRST — five required decisions
+
+**Before doing any work, ask Dr. Yoo all five of these. Don't guess. Don't skip even one.** A wrong assumption on any of them costs hours of rework and can leave orphan Azure resources / catalog entries that have to be cleaned up by hand.
+
+1. **Variant**: **Claude-based** or **Codex-based**?
+   - Claude-based → runs on `openclaw-vm`, backed by Anthropic API. Naming convention: `<Firstname> Claude`.
+   - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI API. Naming convention: `<Firstname>'s Open AI Agent` (matches the existing Yoo / Neil OpenAI bots) or `<Firstname> Codex`.
+
+2. **Which model account / credentials** should back the bot?
+   - For Claude: which Claude OAuth account / `/etc/claude-tokens/<short>.env` entry? Each per-user bot needs its own token file. Reuse-from-existing is allowed but track it — quota is per token.
+   - For Codex: which OpenAI / Codex account, plan tier, and API key? Multiple accounts exist; pick one and note billing/quota implications. The key goes in the vault (e.g. `SDN-SharedVault/<short>-openai-api-key` or per-bot equivalent — confirm location with Dr. Yoo).
+
+3. **Which VM** hosts the new bot?
+   - Default for Claude: `openclaw-vm` (resource group `SDNeurosurgery-OpenClaw`).
+   - Default for Codex / OpenAI: `openclaw-openai-vm` (per the 2026-05-20 migration; 16 Codex crons + the OpenAI bots moved there).
+   - If Dr. Yoo wants the bot on a non-default VM (e.g., a fresh per-bot VM, or alongside another Codex bot), confirm explicitly — don't guess.
+
+4. **Does the user already have a bot of the same variant?**
+   - Check Teams app catalog AND systemd services on the chosen VM. If yes, ask: tear it down first, keep both side-by-side, or rename the existing one. Do not silently build a duplicate — it pollutes the catalog and confuses installation.
+
+5. **Display name** (the Teams catalog name — **picked once, never renamed**).
+   - Convention: `<Firstname> Claude` for Claude-based, `<Firstname>'s Open AI Agent` or `<Firstname> Codex` for Codex-based.
+   - Renames force a fresh manifest upload, which triggers Microsoft anti-abuse and can quarantine the entry — see RECOVERY at the bottom of this doc.
+
+Capture the answers in writing before starting Phase 0. If Dr. Yoo doesn't give a definitive answer on any of the five, **STOP and re-ask**. Building a bot on a guess is the fastest way to create work for everyone.
+
 ---
 
 ## Inputs you need before starting
 
-- **Bot short-name**: `<name>` (lowercase, used for service names, dir names, file prefixes — e.g. `cameron`, `ashley`, `jesus-reyes`)
-- **Bot display name**: the Teams catalog name (e.g. `Cameron Claude`, `Ashley Claude`). **Pick ONCE. Never change it.** Renames force re-upload which triggers anti-abuse.
-- **Target user UPN**: e.g. `Cameronp@musculoskeletalmso.com`
-- **Target user AAD object id**: look up via `GET /v1.0/users/{upn}?$select=id`
-- **Bot description** (≤80 chars): goes in the manifest
+(These derive from the five decisions above plus a couple of routine fields.)
+
+- **Variant**: `claude` or `codex` (from decision 1).
+- **Target VM**: `openclaw-vm` (Claude default) or `openclaw-openai-vm` (Codex default), or whatever Dr. Yoo specified (decision 3).
+- **Model account / credentials**: see decision 2.
+- **Bot short-name**: `<name>` (lowercase, used for service names, dir names, file prefixes — e.g. `cameron`, `ashley`, `jesus-reyes`).
+- **Bot display name**: the Teams catalog name (e.g. `Cameron Claude`, `Neil's Open AI Agent`). **Pick ONCE. Never change it.** Renames force re-upload which triggers anti-abuse.
+- **Target user UPN**: e.g. `Cameronp@musculoskeletalmso.com`.
+- **Target user AAD object id**: look up via `GET /v1.0/users/{upn}?$select=id`.
+- **Bot description** (≤80 chars): goes in the manifest.
 
 ---
 
@@ -47,7 +82,12 @@ If 401/403, the refresh token has expired (90-day idle) and Dr. Yoo needs to re-
 
 ### 0.3 — Is the VM healthy?
 
-Run `scripts/bot-health-check.sh` against any existing working bot (e.g., `cameron`). If that bot reports `healthy: true`, the VM infrastructure is fine. If it fails, fix the existing bot first — don't pile a new bot on top of a broken base.
+Run `scripts/bot-health-check.sh` against any existing working bot on the **target VM** (e.g., `cameron` on `openclaw-vm` for Claude; one of the existing OpenAI bots on `openclaw-openai-vm` for Codex). If that bot reports `healthy: true`, the VM infrastructure is fine. If it fails, fix the existing bot first — don't pile a new bot on top of a broken base.
+
+### 0.4 — Does the model account / API credential work right now?
+
+- **Claude**: confirm the chosen `/etc/claude-tokens/<short>.env` mints (use any working bot's token to sanity-check the Anthropic API is reachable from the target VM).
+- **Codex**: confirm the chosen OpenAI API key returns 200 from a `models` list call. If 401/429 — escalate before building. A key with no quota produces "Had trouble generating a reply" downstream, which is then mistaken for a publishing problem.
 
 ---
 
