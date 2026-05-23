@@ -13,8 +13,8 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
 **Before doing any work, ask Dr. Yoo all five of these. Don't guess. Don't skip even one.** A wrong assumption on any of them costs hours of rework and can leave orphan Azure resources / catalog entries that have to be cleaned up by hand.
 
 1. **Variant**: **Claude-based** or **Codex-based**?
-   - Claude-based → runs on `openclaw-vm`, backed by Anthropic API. Naming convention: `<Firstname> Claude`.
-   - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI API. Naming convention: `<Firstname>'s Open AI Agent` (matches the existing Yoo / Neil OpenAI bots) or `<Firstname> Codex`.
+   - Claude-based → runs on `openclaw-vm`, backed by Anthropic. Display-name convention: `<Firstname> Claude` (e.g. `Zahid Claude`, `Cameron Claude`, `Ashley Claude`).
+   - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI. Display-name convention: **`<Firstname> Codex`** (e.g. `Zahid Codex`) — mirrors the Claude pattern. Use this for every new Codex bot. Older bots named `<Firstname>'s Open AI Agent` (Yoo, Neil) are legacy naming kept for back-compat; **do not** use that pattern for new bots.
 
 2. **Which model account / credentials** should back the bot?
    - For Claude: which Claude OAuth account / `/etc/claude-tokens/<short>.env` entry? Each per-user bot needs its own token file. Reuse-from-existing is allowed but track it — quota is per account.
@@ -29,7 +29,8 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
    - Check Teams app catalog AND systemd services on the chosen VM. If yes, ask: tear it down first, keep both side-by-side, or rename the existing one. Do not silently build a duplicate — it pollutes the catalog and confuses installation.
 
 5. **Display name** (the Teams catalog name — **picked once, never renamed**).
-   - Convention: `<Firstname> Claude` for Claude-based, `<Firstname>'s Open AI Agent` or `<Firstname> Codex` for Codex-based.
+   - **Convention is fixed: `<Firstname> Claude` for Claude-based, `<Firstname> Codex` for Codex-based.** Examples: Zahid Claude / Zahid Codex, Cameron Claude / Cameron Codex. Do not invent variants — keep both bot families on the same `<Firstname> <Variant>` pattern so the fleet stays readable.
+   - The older `<Firstname>'s Open AI Agent` form (Yoo, Neil) is legacy; do not extend it to new bots.
    - Renames force a fresh manifest upload, which triggers Microsoft anti-abuse and can quarantine the entry — see RECOVERY at the bottom of this doc.
 
 Capture the answers in writing before starting Phase 0. If Dr. Yoo doesn't give a definitive answer on any of the five, **STOP and re-ask**. Building a bot on a guess is the fastest way to create work for everyone.
