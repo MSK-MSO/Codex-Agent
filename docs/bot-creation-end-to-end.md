@@ -17,8 +17,8 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
    - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI. Display-name convention: **`<Firstname> Codex`** (e.g. `Zahid Codex`) — mirrors the Claude pattern. Use this for every new Codex bot. Older bots named `<Firstname>'s Open AI Agent` (Yoo, Neil) are legacy naming kept for back-compat; **do not** use that pattern for new bots.
 
 2. **Which model account / credentials** should back the bot?
-   - For Claude: which Claude OAuth account / `/etc/claude-tokens/<short>.env` entry? Each per-user bot needs its own token file. Reuse-from-existing is allowed but track it — quota is per account.
-   - For Codex: which **OpenAI account** — `YooMD`'s or `MSO`'s? Codex-based bots authenticate via Codex CLI's account login (same as `~/.codex/auth.json`), **not** a raw API key. Both accounts have separate quota and billing. Pick one and note billing/quota implications. There is no third option (no API-key path is in use).
+   - **For Codex: ALWAYS the MSO OpenAI account.** This is the standard for every new Codex bot. The MSO account is signed in at `/home/azureuser/.codex/auth.json` on `openclaw-openai-vm` and is shared across every Codex bot that runs as `azureuser` (yooopenai, neil, etc.). Only ask Dr. Yoo about this if he explicitly says he wants a different account — otherwise default to MSO, no question needed.
+   - For Claude: which Claude OAuth account / `/etc/claude-tokens/<short>.env` entry? Each per-user bot gets its own token file. Reuse-from-existing is allowed but track it — quota is per account.
 
 3. **Which VM** hosts the new bot?
    - Default for Claude: `openclaw-vm` (resource group `SDNeurosurgery-OpenClaw`).
@@ -92,7 +92,7 @@ Run `scripts/bot-health-check.sh` against any existing working bot on the **targ
 ### 0.4 — Does the model account / API credential work right now?
 
 - **Claude**: confirm the chosen `/etc/claude-tokens/<short>.env` mints (use any working bot's token to sanity-check the Anthropic API is reachable from the target VM).
-- **Codex**: confirm the chosen OpenAI account (YooMD or MSO) is signed in via Codex CLI on the target VM — `cat ~/.codex/auth.json` (under the right per-user home) should show a valid `access_token` + `refresh_token` and the matching `account_id`. Then run a `codex --print "hello"` smoke test as that user to confirm the account hasn't been logged out or rate-limited. A dead account produces "Had trouble generating a reply" downstream, which is then mistaken for a publishing problem.
+- **Codex**: confirm the MSO OpenAI account is signed in at `/home/azureuser/.codex/auth.json` on the target VM (default `openclaw-openai-vm`). Read `account_id` out of that file and verify it matches the MSO OpenAI account identifier. Then run `sudo -u azureuser codex --print "hello"` as a smoke test — if it returns text, the account is alive. A dead/expired account produces "Had trouble generating a reply" downstream, which is then mistaken for a publishing problem; fix it with a fresh Codex CLI login (Dr. Yoo signs in once via device code) before continuing.
 
 ---
 
