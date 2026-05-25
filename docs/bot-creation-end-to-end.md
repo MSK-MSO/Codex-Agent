@@ -87,7 +87,13 @@ If 401/403, the refresh token has expired (90-day idle) and Dr. Yoo needs to re-
 
 ### 0.3 — Is the VM healthy?
 
-Run `scripts/bot-health-check.sh` against any existing working bot on the **target VM** (e.g., `cameron` on `openclaw-vm` for Claude; one of the existing OpenAI bots on `openclaw-openai-vm` for Codex). If that bot reports `healthy: true`, the VM infrastructure is fine. If it fails, fix the existing bot first — don't pile a new bot on top of a broken base.
+Run `scripts/bot-health-check.sh` against an existing bot on the **target VM** (e.g., `cameron` on `openclaw-vm` for Claude; one of the existing OpenAI bots on `openclaw-openai-vm` for Codex). The goal of this step is to confirm **VM-level infrastructure** (systemd, network, vault, Bot Framework auth) is working — NOT to confirm every existing bot is healthy. Use this decision tree:
+
+1. **Reference bot reports `healthy: true`** → VM is fine. Proceed to 0.4.
+2. **Reference bot reports `healthy: false` but a single-bot reason** (e.g., services `inactive (dead)` with `bf_auth: pass` and `creds_readable: pass` — i.e., somebody just stopped that bot) → **Do NOT block the new build on this.** Note the unhealthy bot as a separate fix-up task and pick a DIFFERENT existing bot on the same VM as your VM-health reference. Common case: a bot got `systemctl stop`-ed manually and never re-enabled. Confirm by running `bot-health-check.sh` against another bot on the same VM — if that one is `healthy: true`, the VM is fine and the first failure is a per-bot issue.
+3. **Two or more existing bots on the same VM report `healthy: false` with infra-level failures** (e.g., `bf_auth: fail`, `creds_readable: fail`, `dir_owner: fail`, multi-bot crash loop) → that's a real VM-level problem. Fix VM infra first; don't pile a new bot on top of a broken base.
+
+In short: **one offline bot ≠ broken VM.** Only block on the new build if you can't find a single healthy reference bot on the target VM after trying at least two.
 
 ### 0.4 — Does the model account / API credential work right now?
 
