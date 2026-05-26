@@ -13,7 +13,7 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
 **Before doing any work, ask Dr. Yoo all five of these. Don't guess. Don't skip even one.** A wrong assumption on any of them costs hours of rework and can leave orphan Azure resources / catalog entries that have to be cleaned up by hand.
 
 1. **Variant**: **Claude-based** or **Codex-based**?
-   - Claude-based → runs on `openclaw-vm`, backed by Anthropic. Display-name convention: `<Firstname> Claude` (e.g. `Zahid Claude`, `Emily Claude`, `Ashley Claude`).
+   - Claude-based → runs on `openclaw-vm`, backed by Anthropic. Display-name convention: `<Firstname> Claude` (e.g. `Zahid Claude`, `Ashley Claude`, `Aixa Claude`).
    - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI. Display-name convention: **`<Firstname> Codex`** (e.g. `Zahid Codex`) — mirrors the Claude pattern. Use this for every new Codex bot. Older bots named `<Firstname>'s Open AI Agent` (Yoo, Neil) are legacy naming kept for back-compat; **do not** use that pattern for new bots.
 
 2. **Which model account / credentials** should back the bot?
@@ -33,7 +33,7 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
 > Even if a bot looks idle, broken, half-built, abandoned, deprecated, duplicate, or "obviously" superseded — leave it running. Dr. Yoo may be using it, someone on staff may be using it, or it may be load-bearing for a workflow you can't see from here. Building a new variant next to it is the default. Tearing down is a separate decision that requires an explicit verbal order from Dr. Yoo for that specific bot. Renames count as destructive too — they trigger a fresh catalog upload and can quarantine the entry.
 
 5. **Display name** (the Teams catalog name — **picked once, never renamed**).
-   - **Convention is fixed: `<Firstname> Claude` for Claude-based, `<Firstname> Codex` for Codex-based.** Examples: Zahid Claude / Zahid Codex, Emily Claude / Emily Codex. Do not invent variants — keep both bot families on the same `<Firstname> <Variant>` pattern so the fleet stays readable.
+   - **Convention is fixed: `<Firstname> Claude` for Claude-based, `<Firstname> Codex` for Codex-based.** Examples: Zahid Claude / Zahid Codex, Ashley Claude / Ashley Codex. Do not invent variants — keep both bot families on the same `<Firstname> <Variant>` pattern so the fleet stays readable.
    - The older `<Firstname>'s Open AI Agent` form (Yoo, Neil) is legacy; do not extend it to new bots.
    - Renames force a fresh manifest upload, which triggers Microsoft anti-abuse and can quarantine the entry — see RECOVERY at the bottom of this doc.
 
@@ -48,9 +48,9 @@ Capture the answers in writing before starting Phase 0. If Dr. Yoo doesn't give 
 - **Variant**: `claude` or `codex` (from decision 1).
 - **Target VM**: `openclaw-vm` (Claude default) or `openclaw-openai-vm` (Codex default), or whatever Dr. Yoo specified (decision 3).
 - **Model account / credentials**: see decision 2.
-- **Bot short-name**: `<name>` (lowercase, used for service names, dir names, file prefixes — e.g. `emily-claude`, `ashley`, `jesus-reyes`).
-- **Bot display name**: the Teams catalog name (e.g. `Emily Claude`, `Neil's Open AI Agent`). **Pick ONCE. Never change it.** Renames force re-upload which triggers anti-abuse.
-- **Target user UPN**: e.g. `EmilyZ@musculoskeletalmso.com`.
+- **Bot short-name**: `<name>` (lowercase, used for service names, dir names, file prefixes — e.g. `<existing-healthy-bot>`, `ashley`, `jesus-reyes`).
+- **Bot display name**: the Teams catalog name (e.g. `<existing-healthy-bot-display-name>`, `Neil's Open AI Agent`). **Pick ONCE. Never change it.** Renames force re-upload which triggers anti-abuse.
+- **Target user UPN**: e.g. `<firstname>@musculoskeletalmso.com`.
 - **Target user AAD object id**: look up via `GET /v1.0/users/{upn}?$select=id`.
 - **Bot description** (≤80 chars): goes in the manifest.
 
@@ -87,7 +87,7 @@ If 401/403, the refresh token has expired (90-day idle) and Dr. Yoo needs to re-
 
 ### 0.3 — Is the VM healthy?
 
-Run `scripts/bot-health-check.sh` against an existing bot on the **target VM** (e.g., `emily-claude` on `openclaw-vm` for Claude; one of the existing OpenAI bots on `openclaw-openai-vm` for Codex). The goal of this step is to confirm **VM-level infrastructure** (systemd, network, vault, Bot Framework auth) is working — NOT to confirm every existing bot is healthy. Use this decision tree:
+Run `scripts/bot-health-check.sh` against an existing bot on the **target VM** (e.g., `<existing-healthy-bot>` on `openclaw-vm` for Claude; one of the existing OpenAI bots on `openclaw-openai-vm` for Codex). The goal of this step is to confirm **VM-level infrastructure** (systemd, network, vault, Bot Framework auth) is working — NOT to confirm every existing bot is healthy. Use this decision tree:
 
 1. **Reference bot reports `healthy: true`** → VM is fine. Proceed to 0.4.
 2. **Reference bot reports `healthy: false` but a single-bot reason** (e.g., services `inactive (dead)` with `bf_auth: pass` and `creds_readable: pass` — i.e., somebody just stopped that bot) → **Do NOT block the new build on this.** Note the unhealthy bot as a separate fix-up task and pick a DIFFERENT existing bot on the same VM as your VM-health reference. Common case: a bot got `systemctl stop`-ed manually and never re-enabled. Confirm by running `bot-health-check.sh` against another bot on the same VM — if that one is `healthy: true`, the VM is fine and the first failure is a per-bot issue.
@@ -186,7 +186,7 @@ If you must do part of it as root, end every block with `sudo chown -R azureuser
 
 ### 2.2 — Generate bot.py and responder.py from a template
 
-Use the latest WORKING bot's source as the template. Examples: `emily-claude-bot.py`, `emily-claude-responder.py`. **Read them first, don't write fresh.**
+Use the latest WORKING bot's source as the template. Examples: the latest working bot under the chosen variant — e.g. for Claude pick any healthy `<short>-bot.py` / `<short>-responder.py` pair off openclaw-vm; for Codex pick one off openclaw-openai-vm. **Read them first, don't write fresh.**
 
 Substitute:
 - `USER_AAD_ID = "<target user's AAD object id>"`
@@ -335,7 +335,7 @@ Add the new service name to `SERVICES` in `tier1-embed-identifiers.py`. Dispatch
 
 ### Tier 2 wiring (the default — every new bot)
 
-#### 2a. For Python responders (the templated bots — Ashley, Emily, all staff bots, etc.)
+#### 2a. For Python responders (the templated bots — Ashley, Aixa, all staff bots, etc.)
 
 Use `MSKMSO/Virtual-Machines/scripts/tier2-wire-vault-fetch.py` via workflow `tier2-wire-vault-fetch.yml`. It:
 

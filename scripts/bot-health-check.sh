@@ -6,7 +6,7 @@
 #   bash bot-health-check.sh <bot-shortname>
 #
 # Where <bot-shortname> matches the systemd unit prefix:
-#   emily-claude, ashley, jesus-reyes, aixa, zahid, neil-claude, emily-claude, ...
+#   <existing-healthy-bot>, ashley, jesus-reyes, aixa, zahid, neil-claude, <existing-healthy-bot>, ...
 #
 # What this checks (in this order):
 #   1. Both <name>-bot.service and <name>-responder.service exist

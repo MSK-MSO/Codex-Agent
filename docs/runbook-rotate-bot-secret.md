@@ -9,7 +9,7 @@ Dispatch via `.requests/az-run-command/<your-id>.json`:
 ```json
 {
   "vm": "openclaw-vm",
-  "script": "BOT_NAME=emily-claude APP_ID=b1d02264-28fe-49f1-ae71-b50b6809f852 bash -c '\nset -e\nsudo -u azureuser bash -lc \"az login --identity >/dev/null 2>&1\"\nAPP_OBJ=$(sudo -u azureuser az rest --method GET --url \"https://graph.microsoft.com/v1.0/applications?\\$filter=appId eq '\\''$APP_ID'\\''&\\$select=id\" --query \"value[0].id\" -o tsv)\nEND=$(date -u -d \"+90 days\" \"+%Y-%m-%dT%H:%M:%SZ\")\nRESP=$(sudo -u azureuser az rest --method POST --url \"https://graph.microsoft.com/v1.0/applications/$APP_OBJ/addPassword\" --headers \"Content-Type=application/json\" --body \"{\\\"passwordCredential\\\":{\\\"displayName\\\":\\\"rotated-$(date -u +%Y%m%d)\\\",\\\"endDateTime\\\":\\\"$END\\\"}}\")\nSECRET=$(echo \"$RESP\" | python3 -c \"import json,sys;print(json.load(sys.stdin).get(\\\"secretText\\\",\\\"\\\"))\")\n[ -n \"$SECRET\" ] || { echo FAIL: no secretText; exit 1; }\nCREDS=/home/azureuser/.${BOT_NAME}-bot/creds.json\nsudo cp \"$CREDS\" \"$CREDS.bak-$(date -u +%s)\"\nsudo -u azureuser python3 -c \"\\nimport json\\nd = json.load(open(\\\"$CREDS\\\"))\\nd[\\\"client_secret\\\"] = \\\"\\\"\\\"$SECRET\\\"\\\"\\\"\\nopen(\\\"$CREDS\\\",\\\"w\\\").write(json.dumps(d, indent=2))\\n\"\nunset SECRET\nsudo systemctl restart ${BOT_NAME}-bot.service ${BOT_NAME}-responder.service\nsleep 30\necho OK: $BOT_NAME secret rotated; restart confirmed; AAD propagation wait done\n'"
+  "script": "BOT_NAME=<bot-shortname> APP_ID=<aad-app-id> bash -c '\nset -e\nsudo -u azureuser bash -lc \"az login --identity >/dev/null 2>&1\"\nAPP_OBJ=$(sudo -u azureuser az rest --method GET --url \"https://graph.microsoft.com/v1.0/applications?\\$filter=appId eq '\\''$APP_ID'\\''&\\$select=id\" --query \"value[0].id\" -o tsv)\nEND=$(date -u -d \"+90 days\" \"+%Y-%m-%dT%H:%M:%SZ\")\nRESP=$(sudo -u azureuser az rest --method POST --url \"https://graph.microsoft.com/v1.0/applications/$APP_OBJ/addPassword\" --headers \"Content-Type=application/json\" --body \"{\\\"passwordCredential\\\":{\\\"displayName\\\":\\\"rotated-$(date -u +%Y%m%d)\\\",\\\"endDateTime\\\":\\\"$END\\\"}}\")\nSECRET=$(echo \"$RESP\" | python3 -c \"import json,sys;print(json.load(sys.stdin).get(\\\"secretText\\\",\\\"\\\"))\")\n[ -n \"$SECRET\" ] || { echo FAIL: no secretText; exit 1; }\nCREDS=/home/azureuser/.${BOT_NAME}-bot/creds.json\nsudo cp \"$CREDS\" \"$CREDS.bak-$(date -u +%s)\"\nsudo -u azureuser python3 -c \"\\nimport json\\nd = json.load(open(\\\"$CREDS\\\"))\\nd[\\\"client_secret\\\"] = \\\"\\\"\\\"$SECRET\\\"\\\"\\\"\\nopen(\\\"$CREDS\\\",\\\"w\\\").write(json.dumps(d, indent=2))\\n\"\nunset SECRET\nsudo systemctl restart ${BOT_NAME}-bot.service ${BOT_NAME}-responder.service\nsleep 30\necho OK: $BOT_NAME secret rotated; restart confirmed; AAD propagation wait done\n'"
 }
 ```
 
@@ -20,7 +20,7 @@ The escaping above is unpleasant because of the JSON-in-shell layers. Easier: ke
 Have a maintained helper script on the VM. Dispatch shrinks to:
 
 ```json
-{"vm":"openclaw-vm","script":"bash /home/azureuser/rotate-bot-secret.sh emily-claude b1d02264-28fe-49f1-ae71-b50b6809f852"}
+{"vm":"openclaw-vm","script":"bash /home/azureuser/rotate-bot-secret.sh <bot-shortname> <aad-app-id>"}
 ```
 
 The helper itself is in this repo at `scripts/vm/rotate-bot-secret.sh` and gets deployed to the VM via the `deploy-vm-script` workflow when this repo updates it. (Helper not yet present — first invocation of this runbook deploys it; see issue tracker.)

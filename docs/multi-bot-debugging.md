@@ -10,7 +10,7 @@ When several bots are built from the same template and one works while others do
 
 ```bash
 # From a dispatch-az-run-command request:
-{"vm":"openclaw-vm","script":"diff /home/azureuser/aixa-responder.py /home/azureuser/emily-claude-responder.py | head -100"}
+{"vm":"openclaw-vm","script":"diff /home/azureuser/aixa-responder.py /home/azureuser/<existing-healthy-bot>-responder.py | head -100"}
 ```
 
 Apply this to every file the bots share by template:
@@ -28,7 +28,7 @@ Apply this to every file the bots share by template:
 The single-shot reliable check is `scripts/bot-health-check.sh` in this repo. Dispatch it via `dispatch-az-run-command`:
 
 ```json
-{"vm":"openclaw-vm","script":"bash /home/azureuser/bot-health-check.sh emily-claude"}
+{"vm":"openclaw-vm","script":"bash /home/azureuser/bot-health-check.sh <existing-healthy-bot>"}
 ```
 
 (Deploy the script first via the deploy-vm-script workflow, or inline its body in the request.)
@@ -37,7 +37,7 @@ It returns JSON like:
 
 ```json
 {
-  "name": "emily-claude",
+  "name": "<existing-healthy-bot>",
   "healthy": true,
   "checks": {
     "units_exist": "pass",
@@ -54,7 +54,7 @@ It returns JSON like:
 }
 ```
 
-Exit 0 = healthy, exit 1 = sick. **All seven checks must pass.** A subset (e.g. only `bf_auth: pass`) is the trap that produced the 2026-05-09 false-positive on the Emily/Ashley/Jesus bots — credentials were good but the bot processes couldn't read them off disk because the directory was owned by `root`. They were crashing every 5 seconds; `is-active` and `bf_auth` both reported healthy.
+Exit 0 = healthy, exit 1 = sick. **All seven checks must pass.** A subset (e.g. only `bf_auth: pass`) is the trap that produced the 2026-05-09 false-positive on the <Firstname>/Ashley/Jesus bots — credentials were good but the bot processes couldn't read them off disk because the directory was owned by `root`. They were crashing every 5 seconds; `is-active` and `bf_auth` both reported healthy.
 
 ## Diagnostic order when a bot is silent in Teams
 
