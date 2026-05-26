@@ -9,7 +9,7 @@
 # proceed.
 
 set -uo pipefail
-REFERENCE_BOT="${1:-cameron}"   # an existing healthy bot used as canary
+REFERENCE_BOT="${1:-emily-claude}"   # an existing healthy bot used as canary
 TENANT=50186224-2255-444a-b321-60a84114115c
 TEAMS_GRAPH_CLI=14d82eec-204b-4c2f-b7e8-296a70dab67e
 APP_PUBLISHER=9f4cd925-fcc7-4f42-8dc2-ae98bcad28a6
@@ -61,11 +61,11 @@ echo "=== Phase 0.3: Tenant Teams app permission policy is open (canary install 
 # Find a working bot's catalog app id to use as canary
 CANARY_APP=$(curl -sS -G -H "Authorization: Bearer $APPCAT_AT" \
   "https://graph.microsoft.com/v1.0/appCatalogs/teamsApps" \
-  --data-urlencode "\$filter=displayName eq 'Cameron Claude'" \
+  --data-urlencode "\$filter=displayName eq 'Emily Claude'" \
   | python3 -c "import json,sys;v=json.load(sys.stdin).get('value',[]);print(v[0]['id'] if v else '')" 2>/dev/null)
 
 if [ -z "$CANARY_APP" ]; then
-  fail "no canary 'Cameron Claude' app in catalog — can't test policy gate"
+  fail "no canary 'Emily Claude' app in catalog — can't test policy gate"
 else
   # Dry-run install for Dr. Yoo (he probably already has it; 409 Conflict is also OK)
   CODE=$(curl -sS -o /tmp/preflight-r.json -w '%{http_code}' -X POST \
