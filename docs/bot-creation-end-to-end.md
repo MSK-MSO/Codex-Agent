@@ -13,7 +13,7 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
 **Before doing any work, ask Dr. Yoo all five of these. Don't guess. Don't skip even one.** A wrong assumption on any of them costs hours of rework and can leave orphan Azure resources / catalog entries that have to be cleaned up by hand.
 
 1. **Variant**: **Claude-based** or **Codex-based**?
-   - Claude-based → runs on `openclaw-vm`, backed by Anthropic. Display-name convention: `<Firstname> Claude` (e.g. `Zahid Claude`, `Ashley Claude`, `Aixa Claude`).
+   - Claude-based → runs on `openclaw-vm`, backed by Anthropic. Display-name convention: `<Firstname> Claude` (e.g. `Zahid Claude`, `Cameron Claude`, `Ashley Claude`).
    - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI. Display-name convention: **`<Firstname> Codex`** (e.g. `Zahid Codex`) — mirrors the Claude pattern. Use this for every new Codex bot. Older bots named `<Firstname>'s Open AI Agent` (Yoo, Neil) are legacy naming kept for back-compat; **do not** use that pattern for new bots.
 
 2. **Which model account / credentials** should back the bot?
@@ -33,7 +33,7 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
 > Even if a bot looks idle, broken, half-built, abandoned, deprecated, duplicate, or "obviously" superseded — leave it running. Dr. Yoo may be using it, someone on staff may be using it, or it may be load-bearing for a workflow you can't see from here. Building a new variant next to it is the default. Tearing down is a separate decision that requires an explicit verbal order from Dr. Yoo for that specific bot. Renames count as destructive too — they trigger a fresh catalog upload and can quarantine the entry.
 
 5. **Display name** (the Teams catalog name — **picked once, never renamed**).
-   - **Convention is fixed: `<Firstname> Claude` for Claude-based, `<Firstname> Codex` for Codex-based.** Examples: Zahid Claude / Zahid Codex, Ashley Claude / Ashley Codex. Do not invent variants — keep both bot families on the same `<Firstname> <Variant>` pattern so the fleet stays readable.
+   - **Convention is fixed: `<Firstname> Claude` for Claude-based, `<Firstname> Codex` for Codex-based.** Examples: Zahid Claude / Zahid Codex, Cameron Claude / Cameron Codex. Do not invent variants — keep both bot families on the same `<Firstname> <Variant>` pattern so the fleet stays readable.
    - The older `<Firstname>'s Open AI Agent` form (Yoo, Neil) is legacy; do not extend it to new bots.
    - Renames force a fresh manifest upload, which triggers Microsoft anti-abuse and can quarantine the entry — see RECOVERY at the bottom of this doc.
 
@@ -335,7 +335,7 @@ Add the new service name to `SERVICES` in `tier1-embed-identifiers.py`. Dispatch
 
 ### Tier 2 wiring (the default — every new bot)
 
-#### 2a. For Python responders (the templated bots — Ashley, Aixa, all staff bots, etc.)
+#### 2a. For Python responders (the templated bots — Ashley, Cameron, all staff bots, etc.)
 
 Use `MSKMSO/Virtual-Machines/scripts/tier2-wire-vault-fetch.py` via workflow `tier2-wire-vault-fetch.yml`. It:
 

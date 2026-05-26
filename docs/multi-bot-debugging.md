@@ -28,7 +28,7 @@ Apply this to every file the bots share by template:
 The single-shot reliable check is `scripts/bot-health-check.sh` in this repo. Dispatch it via `dispatch-az-run-command`:
 
 ```json
-{"vm":"openclaw-vm","script":"bash /home/azureuser/bot-health-check.sh <existing-healthy-bot>"}
+{"vm":"openclaw-vm","script":"bash /home/azureuser/bot-health-check.sh cameron"}
 ```
 
 (Deploy the script first via the deploy-vm-script workflow, or inline its body in the request.)
@@ -37,7 +37,7 @@ It returns JSON like:
 
 ```json
 {
-  "name": "<existing-healthy-bot>",
+  "name": "cameron",
   "healthy": true,
   "checks": {
     "units_exist": "pass",
