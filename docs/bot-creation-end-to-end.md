@@ -10,9 +10,10 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
 
 ## ASK FIRST — five required decisions
 
-**Before doing any work, ask Dr. Yoo all five of these. Don't guess. Don't skip even one.** A wrong assumption on any of them costs hours of rework and can leave orphan Azure resources / catalog entries that have to be cleaned up by hand.
+**Before doing any work, capture all five decisions in writing. Do not guess unresolved fields.** If Dr. Yoo's request already explicitly answers one or more of them, **do not re-ask those answered fields**; record them and only ask for the remaining unresolved decisions. A wrong assumption on any unresolved field costs hours of rework and can leave orphan Azure resources / catalog entries that have to be cleaned up by hand.
 
 1. **Variant**: **Claude-based** or **Codex-based**?
+   - If Dr. Yoo explicitly says `make a Codex bot` or `make a Claude bot`, treat that as the decision. Do **not** ask the Codex-or-Claude question again.
    - Claude-based → runs on `openclaw-vm`, backed by Anthropic. Display-name convention: `<Firstname> Claude` (e.g. `Zahid Claude`, `Cameron Claude`, `Ashley Claude`).
    - Codex-based → runs on `openclaw-openai-vm` (per the 2026-05-20 migration), backed by OpenAI. Display-name convention: **`<Firstname> Codex`** (e.g. `Zahid Codex`) — mirrors the Claude pattern. Use this for every new Codex bot. Older bots named `<Firstname>'s Open AI Agent` (Yoo, Neil) are legacy naming kept for back-compat; **do not** use that pattern for new bots.
 
@@ -37,7 +38,7 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
    - The older `<Firstname>'s Open AI Agent` form (Yoo, Neil) is legacy; do not extend it to new bots.
    - Renames force a fresh manifest upload, which triggers Microsoft anti-abuse and can quarantine the entry — see RECOVERY at the bottom of this doc.
 
-Capture the answers in writing before starting Phase 0. If Dr. Yoo doesn't give a definitive answer on any of the five, **STOP and re-ask**. Building a bot on a guess is the fastest way to create work for everyone.
+Capture the answers in writing before starting Phase 0. If Dr. Yoo doesn't give a definitive answer on any still-unresolved item, **STOP and re-ask only that item**. Building a bot on a guess is the fastest way to create work for everyone.
 
 ---
 
@@ -220,7 +221,11 @@ location /<name>/api/messages { proxy_pass http://127.0.0.1:<port>/api/messages;
 
 ---
 
-## PHASE 3 — Teams catalog publish
+## PHASE 3 — Build the manifest zip (catalog publish is OPTIONAL for per-user bots)
+
+**Standing rule (2026-05-29, Dr. Yoo):** for per-user bots — the default case — you build the zip but do **NOT** upload it to the tenant catalog. The user sideloads the zip themselves in Phase 4. Skip 3.2 and 3.3 below in that case.
+
+Only do the catalog upload (3.2 + 3.3) if Dr. Yoo explicitly asks for a tenant-wide install or the bot needs to live in the org-wide app catalog. The default for every personal bot is **build zip → hand to user → user sideloads**.
 
 ### 3.1 — Generate manifest
 
@@ -260,34 +265,62 @@ If verify fails after 5 minutes, the app got quarantined by Microsoft. **Stop. D
 
 ---
 
-## PHASE 4 — Install for the target user
+## PHASE 4 — Hand the zip to the user for self-upload
 
-### 4.1 — Use YooMD chat token, not AppPublisher
+**New standing rule (2026-05-29, Dr. Yoo):** do NOT install the app yourself via Graph. Do NOT push the zip into the tenant catalog. Instead, **send the manifest zip to the user in Teams chat with step-by-step sideload instructions, and let them upload it themselves.**
 
-The install endpoint requires `TeamsAppInstallation.ReadWriteForUser.All`, which AppPublisher doesn't have but YooMD does.
+Why this changed:
+- Every programmatic upload risks tripping Microsoft's anti-abuse cooldown (~24h silent quarantine). User-driven sideload via "Upload a custom app" sidesteps it entirely.
+- The user ends up owning the install, so removal/reinstall is in their hands — no Graph token plumbing needed when something goes wrong.
+- The tenant Teams App Permission Policy gate (the 2026-05-11 wall) doesn't apply to a user uploading a custom app into their own personal scope.
+
+### 4.1 — Deliver the manifest zip to the user in Teams
+
+Use the bot's own send-helper (or `mskmso-anthropic-upload-to.sh` for the MSKAI bot) to post `manifest.zip` directly into the user's 1:1 chat with the appropriate sending bot. **Do not email it. Do not link a SharePoint URL.** The zip must arrive as a Teams attachment so the user can download it with one tap.
 
 ```bash
-RT=$(az keyvault secret show --vault-name SDN-YooVault --name yoomd-graph-refresh-token --query value -o tsv)
-CHAT_TOKEN=$(curl -X POST .../token \
-  -d "client_id=14d82eec-204b-4c2f-b7e8-296a70dab67e&grant_type=refresh_token&refresh_token=$RT&scope=TeamsAppInstallation.ReadWriteForUser.All offline_access" \
-  | jq -r .access_token)
-
-curl -X POST "https://graph.microsoft.com/v1.0/users/$TARGET_AAD_ID/teamwork/installedApps" \
-  -H "Authorization: Bearer $CHAT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"teamsApp@odata.bind\":\"https://graph.microsoft.com/v1.0/appCatalogs/teamsApps/$TEAMS_APP_ID\"}"
-# Expect: 201 Created
+bash /home/azureuser/<sender-bot>-upload-to.sh "<user-upn-or-chat-id>" manifest.zip "Your <Firstname> Claude bot — upload instructions below"
 ```
 
-### 4.2 — Verify install record
+### 4.2 — Post the upload instructions in the SAME chat, right after the zip
+
+Paste the following verbatim (substitute `<Firstname> Claude` / `<Firstname> Codex` as appropriate). Keep it as one message so the user has the zip and the steps side-by-side.
+
+> **How to install your `<Firstname> Claude` bot (one-time, ~30 seconds):**
+>
+> 1. **Download the zip** above to your computer (or phone — works on both).
+> 2. In Teams, click **Apps** in the left sidebar (the grid icon).
+> 3. Click **Manage your apps** at the bottom of the Apps panel.
+> 4. Click **Upload an app**.
+> 5. Click **Upload a custom app** (it may say *Upload for me* on some tenants).
+> 6. Select the **zip file** you just downloaded.
+> 7. When Teams asks, click **Add** to install it for yourself.
+>
+> You'll see a new chat appear with `<Firstname> Claude`. Send it a message to confirm it's working — it should reply within a few seconds.
+>
+> If you get an error like *"This app could not be added"* or *"blocked by app permission policy,"* reply here and I'll look into it.
+
+### 4.3 — Wait for the user to confirm, then verify
+
+Do NOT claim success until the user reports back that the bot replied to them. Once they confirm:
 
 ```bash
+# Verify the install record landed (read-only — no install action). Uses YooMD chat token, which has TeamsAppInstallation.ReadForUser.All.
+RT=$(az keyvault secret show --vault-name SDN-YooVault --name yoomd-graph-refresh-token --query value -o tsv)
+CHAT_TOKEN=$(curl -X POST .../token \
+  -d "client_id=14d82eec-204b-4c2f-b7e8-296a70dab67e&grant_type=refresh_token&refresh_token=$RT&scope=TeamsAppInstallation.ReadForUser.All offline_access" \
+  | jq -r .access_token)
+
 curl -G "https://graph.microsoft.com/v1.0/users/$TARGET_AAD_ID/teamwork/installedApps" \
   -H "Authorization: Bearer $CHAT_TOKEN" \
   --data-urlencode '$expand=teamsApp' \
-  | jq ".value[] | select(.teamsApp.id == \"$TEAMS_APP_ID\") | .teamsApp.displayName"
-# Expect: prints the bot's display name. If empty, the install didn't take.
+  | jq ".value[] | select(.teamsApp.displayName == \"<Bot Display Name>\") | .teamsApp.displayName"
+# Expect: prints the bot's display name. If empty, the user hasn't completed the sideload yet — wait, don't re-prompt.
 ```
+
+### 4.4 — If the user hits the policy 403
+
+If the user reports *"App is blocked by app permission policy,"* that's the tenant gate (covered in Phase 0.1). Don't try to work around it by switching to a programmatic install — that re-introduces the failure mode this whole phase was rewritten to avoid. Escalate to Dr. Yoo so he can open the gate, then have the user retry the same sideload steps.
 
 ---
 
