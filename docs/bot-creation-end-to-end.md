@@ -525,3 +525,21 @@ Microsoft uses the same field name `"id"` in different POST responses to mean di
 ## Bot returns "Had trouble generating a reply"
 
 Different problem from anything above. The bot publish succeeded and the user CAN reach it, but every reply is an error. See [`bot-empty-reply-diagnosis.md`](bot-empty-reply-diagnosis.md) — it walks through the three patterns (rate limit, broken `run_codex` from code injection, Graph 404 red herring) and exactly which logs distinguish them.
+
+---
+
+## Variant 3 — Foundry-backed bot (Fleet Architect pattern, added 2026-06-10)
+
+A third variant exists alongside Claude- and Codex-based bots: the bot's brain is an **Azure AI Foundry agent** (project `agent-platform` on resource `mskmso-foundry`, rg `rg-mskmso-ai`, East US 2). First instance: **Fleet Architect** (appId `15472e97-43e5-46f8-9776-9ff0e6aafb19`, Bot resource `OpenClaw-FleetArchitect`, port 4005 on openclaw-vm).
+
+Use this variant when the bot should run on metered Azure billing (no consumer Claude/Codex seat, no weekly caps, no OAuth-token expiry) and/or needs Foundry features (model router, per-agent token caps, Foundry observability, BAA-covered Azure OpenAI models for future PHI workloads).
+
+**What's identical to the other variants:** Phase 0 preflight, Phase 1 (Entra app + Bot Service + Teams channel), systemd/nginx layout, manifest build, Phase 4 sideload flow, az-guard refresh, the never-tear-down rule.
+
+**What diverges:**
+- **No model account onboarding (decision 2 is moot).** The responder talks to the Foundry project's Responses API with the resource API key. Env file `/etc/claude-tokens/<short>.env` carries `FOUNDRY_API_KEY=<key1 of mskmso-foundry>` + `ALLOWED_AAD_OIDS=...` (empty value = org-wide; Bot Framework JWT still enforced).
+- **Responder is plumbing only** (`fleet-architect-responder.py` is the template): poll activities.jsonl → POST `{project-endpoint}/openai/v1/responses` with `{"agent_reference":{"type":"agent_reference","name":"<agent>"}, "input":..., "previous_response_id": <per-conversation, state.json>}` → reply via Bot Connector (`https://api.botframework.com/.default` client-credentials with the bot's own appId/secret; activity posted to the incoming serviceUrl). On HTTP error with a previous_response_id, retry once without it (stale thread).
+- **Behavior tuning happens in Foundry, not on the VM.** To change instructions/tools: POST a new agent version to `{project-endpoint}/agents/<agent>/versions?api-version=v1` (body needs `name` + `definition{kind:"prompt", model, instructions, tools}`). Do NOT edit responder prompts — there are none.
+- **Two Graph/API gotchas hit on 2026-06-10:** (a) directory replication race — `addPassword` right after app creation can 404 (`Request_ResourceNotFound`); retry with ~12s backoff. (b) `POST /agents` with an existing name returns `conflict` — new versions go to `/agents/<name>/versions`.
+
+**Catalog-publish incident (2026-06-10), read before any org-wide publish:** the AppPublisher delegated upload (`POST /v1.0/appCatalogs/teamsApps`) returned 200 **with an app id**, then the app silently never materialized — GET by id 404, absent by `externalId` and `displayName` filters. That is the silent anti-abuse quarantine in action; the success-shaped response is a lie. Per the standing rule: do NOT retry programmatically (each attempt deepens the ~24h cooldown). Fallback that works (PDF Tools precedent, 2026-05-30): **manual upload by an admin** at admin.teams.microsoft.com → Teams apps → Manage apps → Upload new app, using the same zip. Manual ingestion is a different path and is not affected by the Graph-side cooldown.
