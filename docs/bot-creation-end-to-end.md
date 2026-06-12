@@ -547,3 +547,12 @@ Use this variant when the bot should run on metered Azure billing (no consumer C
 2. Do still honor the no-retry rule while waiting: a second programmatic upload of the same manifest while the first is mid-ingestion is what actually creates conflicts.
 3. A manual admin-center upload attempted during/after ingestion fails with "there's already an app in the catalog with the same app ID" — that duplicate error is itself proof the original upload landed. Treat it as success, find the app in Manage apps, and verify its status there.
 4. True quarantine (per the 2026-05 era incidents) still exists; the discriminator is time. Invisible after 24h = quarantined. Invisible after 10 minutes = probably just slow.
+
+
+### Variant 3 standard capability: screenshot / image vision (added 2026-06-11)
+
+Every Foundry-backed agent is built WITH image vision by default. The responder template (`/home/azureuser/agent-templates/_template-responder.py`, marker `IMAGE_SUPPORT_V1`) pulls image attachments from inbound Teams activities (pasted screenshots = `smba.trafficmanager.net/.../v3/attachments/...` fetched with the bot connector token; rich-card images = Graph `hostedContents` fetched with the app token), base64-encodes them, and sends them to the Responses API as `input_image` content parts. Caps: 4 images/message, 5 MB each. The router/GPT-5.x models are multimodal, so no model change is needed.
+
+**Provisioning inherits it automatically** — new agents are cloned from the canonical templates in `/home/azureuser/agent-templates/`, which already contain `IMAGE_SUPPORT_V1`. Do NOT strip it. Also add the agent-instruction line: "You CAN see images/screenshots that staff attach; only say you can't if none was provided."
+
+**PHI agents:** wire the capability but set `IMG_PRELAUNCH=1` in the agent's `/etc/claude-tokens/<short>.env`. While set, the responder drops images before they reach the model (a screenshot is the easiest way for PHI to bypass a text-only gate). The post-abuse-monitoring launch step flips it to `0` (or removes the line) at the same time it removes the PRE-LAUNCH text block. Non-PHI agents leave the flag unset (images flow immediately).
