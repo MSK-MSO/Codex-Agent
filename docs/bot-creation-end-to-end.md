@@ -567,12 +567,13 @@ Every MSK MSO Foundry-backed agent (current and future) MUST have all of the fol
 3. **Exact token + cost metering.** Per-call `usage.jsonl` logging input/output/total tokens; `build_usage_context()` computes exact dollars from the published Azure price table (incl. router markup). Agents answer cost/usage questions with real numbers, never "tell me which model," never invented figures.
 4. **Transient-error retry.** `ask_foundry` retries on 400/408/429/5xx (3 attempts, backoff) so a momentary Foundry slowdown never surfaces "I had trouble reaching the Foundry agent."
 5. **Table rendering.** Markdown pipe tables are converted to Adaptive Card tables before sending (reports/VM lists render as real grids, never collapsed text).
-6. **Group-chat support.** Manifest carries `groupChat` scope + `webApplicationInfo` + `authorization.resourceSpecific` (RSC) so the bot can be added to and respond in group chats (when @mentioned).
-7. **Conversation continuity.** `previous_response_id` per conversation in `state.json`.
-8. **Access gate.** `ALLOWED_AAD_OIDS` in the env file (empty = org-wide; JWT bot-framework auth always enforced regardless).
-9. **Identity protection.** Bot AAD identity registered in `/etc/az-guard/protected-bot-ids` (`sudo /usr/local/sbin/az-guard-refresh-bot-ids` after creating).
-10. **Distinct icon.** A meaningful color + outline icon in the practice palette (navy bg, cyan-blue elements, lime accent) — never the default "C".
-11. **Plain-language style + standard report format** baked into the agent instructions; usage/VM reports follow the canonical `# | Name | VM | VM Size | Runtime | Sessions | Est. $/hr | Est. Cost` table.
+6. **@mention / tag individuals — REQUIRED.** Responder marker `MENTION_SUPPORT_V1`: it fetches the conversation roster (connector `/v3/conversations/{id}/members`), resolves any `<at>Name</at>` the model writes into real Teams mention entities (so the person is tagged AND notified), strips unresolved tags, and injects the taggable-name list into group-chat input. Agent instructions tell the model to tag the relevant person (asker, hand-off target) by default. Without this, an agent writing "@John" notifies no one.
+7. **Group-chat support.** Manifest carries `groupChat` scope + `webApplicationInfo` + `authorization.resourceSpecific` (RSC) so the bot can be added to and respond in group chats (when @mentioned).
+8. **Conversation continuity.** `previous_response_id` per conversation in `state.json`.
+9. **Access gate.** `ALLOWED_AAD_OIDS` in the env file (empty = org-wide; JWT bot-framework auth always enforced regardless).
+10. **Identity protection.** Bot AAD identity registered in `/etc/az-guard/protected-bot-ids` (`sudo /usr/local/sbin/az-guard-refresh-bot-ids` after creating).
+11. **Distinct icon.** A meaningful color + outline icon in the practice palette (navy bg, cyan-blue elements, lime accent) — never the default "C".
+12. **Plain-language style + standard report format** baked into the agent instructions; usage/VM reports follow the canonical `# | Name | VM | VM Size | Runtime | Sessions | Est. $/hr | Est. Cost` table.
 
 PHI agents add: pinned GA Azure OpenAI model (not router), web search off, and a launch gate on the abuse-monitoring exemption for going hands-on with patient *workflows* — but screenshots/images are NOT gated (see item 2).
 
