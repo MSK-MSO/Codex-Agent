@@ -562,7 +562,7 @@ Every Foundry-backed agent is built WITH image vision by default. The responder 
 
 Every MSK MSO Foundry-backed agent (current and future) MUST have all of the following. New builds inherit them from the canonical templates in `/home/azureuser/agent-templates/`; do not strip any.
 
-1. **Foundry-backed, Microsoft BAA boundary.** Brain is a Foundry agent on Azure OpenAI / Microsoft-hosted models (model-router for general agents; a pinned GA Azure OpenAI deployment for PHI agents). Everything stays inside the Microsoft HIPAA/BAA-covered ecosystem — no consumer AI, no non-Microsoft processors for PHI.
+1. **Foundry-backed, Microsoft BAA boundary.** Brain is a Foundry agent on a direct GA Azure OpenAI deployment (default gpt-5-4-mini — reliable tool-calling + multimodal). Do NOT use model-router for tool-using agents (it intermittently 400s on tool calls — see note below). PHI agents use a pinned GA deployment. Everything stays inside the Microsoft HIPAA/BAA-covered ecosystem — no consumer AI, no non-Microsoft processors for PHI.
 2. **Screenshot / image vision — ALWAYS ON, no guardrail.** Marker `IMAGE_SUPPORT_V1` in the responder. Applies to ALL agents including PHI/Prep agents. Screenshots are processed inside the Microsoft BAA-covered Azure OpenAI boundary, so they are HIPAA-compliant. There is NO `IMG_PRELAUNCH` gate — do not add one.
 3. **Exact token + cost metering.** Per-call `usage.jsonl` logging input/output/total tokens; `build_usage_context()` computes exact dollars from the published Azure price table (incl. router markup). Agents answer cost/usage questions with real numbers, never "tell me which model," never invented figures.
 4. **Transient-error retry.** `ask_foundry` retries on 400/408/429/5xx (3 attempts, backoff) so a momentary Foundry slowdown never surfaces "I had trouble reaching the Foundry agent."
@@ -575,3 +575,10 @@ Every MSK MSO Foundry-backed agent (current and future) MUST have all of the fol
 11. **Plain-language style + standard report format** baked into the agent instructions; usage/VM reports follow the canonical `# | Name | VM | VM Size | Runtime | Sessions | Est. $/hr | Est. Cost` table.
 
 PHI agents add: pinned GA Azure OpenAI model (not router), web search off, and a launch gate on the abuse-monitoring exemption for going hands-on with patient *workflows* — but screenshots/images are NOT gated (see item 2).
+
+
+### ⚠️ Model choice: use gpt-5.4-mini for tool-using agents, NOT model-router (2026-06-12)
+
+Discovered 2026-06-12: the Foundry **model-router deployment intermittently 400s on tool/function calls** ("There was an issue with your request") while plain chat works. The identical OpenAPI tool succeeds on a direct **gpt-5-4-mini** deployment. IT Helpdesk and Fleet Architect (both tool-using) were moved off the router to gpt-5-4-mini and tool calls became reliable. 
+
+**Rule:** create the Foundry agent on a direct GA deployment (default **gpt-5-4-mini** — cheap, multimodal, reliable tools). Reserve model-router only for chat-only agents with no tools, and re-test tool-calling on the router before trusting it. PHI agents already use a pinned GA model, so they were unaffected.
