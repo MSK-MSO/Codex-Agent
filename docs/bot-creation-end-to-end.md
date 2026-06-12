@@ -553,6 +553,25 @@ Use this variant when the bot should run on metered Azure billing (no consumer C
 
 Every Foundry-backed agent is built WITH image vision by default. The responder template (`/home/azureuser/agent-templates/_template-responder.py`, marker `IMAGE_SUPPORT_V1`) pulls image attachments from inbound Teams activities (pasted screenshots = `smba.trafficmanager.net/.../v3/attachments/...` fetched with the bot connector token; rich-card images = Graph `hostedContents` fetched with the app token), base64-encodes them, and sends them to the Responses API as `input_image` content parts. Caps: 4 images/message, 5 MB each. The router/GPT-5.x models are multimodal, so no model change is needed.
 
-**Provisioning inherits it automatically** — new agents are cloned from the canonical templates in `/home/azureuser/agent-templates/`, which already contain `IMAGE_SUPPORT_V1`. Do NOT strip it. Also add the agent-instruction line: "You CAN see images/screenshots that staff attach; only say you can't if none was provided."
+**Always on for every agent — including PHI agents** (images go to Azure OpenAI / Microsoft-hosted models inside the Microsoft BAA-covered boundary, so screenshots are HIPAA-compliant; no screenshot guardrail). **Provisioning inherits it automatically** — new agents are cloned from the canonical templates in `/home/azureuser/agent-templates/`, which already contain `IMAGE_SUPPORT_V1`. Do NOT strip it. Also add the agent-instruction line: "You CAN see images/screenshots that staff attach; only say you can't if none was provided."
 
-**PHI agents:** wire the capability but set `IMG_PRELAUNCH=1` in the agent's `/etc/claude-tokens/<short>.env`. While set, the responder drops images before they reach the model (a screenshot is the easiest way for PHI to bypass a text-only gate). The post-abuse-monitoring launch step flips it to `0` (or removes the line) at the same time it removes the PRE-LAUNCH text block. Non-PHI agents leave the flag unset (images flow immediately).
+
+---
+
+## UNIVERSAL REQUIREMENTS — every agent, no exceptions
+
+Every MSK MSO Foundry-backed agent (current and future) MUST have all of the following. New builds inherit them from the canonical templates in `/home/azureuser/agent-templates/`; do not strip any.
+
+1. **Foundry-backed, Microsoft BAA boundary.** Brain is a Foundry agent on Azure OpenAI / Microsoft-hosted models (model-router for general agents; a pinned GA Azure OpenAI deployment for PHI agents). Everything stays inside the Microsoft HIPAA/BAA-covered ecosystem — no consumer AI, no non-Microsoft processors for PHI.
+2. **Screenshot / image vision — ALWAYS ON, no guardrail.** Marker `IMAGE_SUPPORT_V1` in the responder. Applies to ALL agents including PHI/Prep agents. Screenshots are processed inside the Microsoft BAA-covered Azure OpenAI boundary, so they are HIPAA-compliant. There is NO `IMG_PRELAUNCH` gate — do not add one.
+3. **Exact token + cost metering.** Per-call `usage.jsonl` logging input/output/total tokens; `build_usage_context()` computes exact dollars from the published Azure price table (incl. router markup). Agents answer cost/usage questions with real numbers, never "tell me which model," never invented figures.
+4. **Transient-error retry.** `ask_foundry` retries on 400/408/429/5xx (3 attempts, backoff) so a momentary Foundry slowdown never surfaces "I had trouble reaching the Foundry agent."
+5. **Table rendering.** Markdown pipe tables are converted to Adaptive Card tables before sending (reports/VM lists render as real grids, never collapsed text).
+6. **Group-chat support.** Manifest carries `groupChat` scope + `webApplicationInfo` + `authorization.resourceSpecific` (RSC) so the bot can be added to and respond in group chats (when @mentioned).
+7. **Conversation continuity.** `previous_response_id` per conversation in `state.json`.
+8. **Access gate.** `ALLOWED_AAD_OIDS` in the env file (empty = org-wide; JWT bot-framework auth always enforced regardless).
+9. **Identity protection.** Bot AAD identity registered in `/etc/az-guard/protected-bot-ids` (`sudo /usr/local/sbin/az-guard-refresh-bot-ids` after creating).
+10. **Distinct icon.** A meaningful color + outline icon in the practice palette (navy bg, cyan-blue elements, lime accent) — never the default "C".
+11. **Plain-language style + standard report format** baked into the agent instructions; usage/VM reports follow the canonical `# | Name | VM | VM Size | Runtime | Sessions | Est. $/hr | Est. Cost` table.
+
+PHI agents add: pinned GA Azure OpenAI model (not router), web search off, and a launch gate on the abuse-monitoring exemption for going hands-on with patient *workflows* — but screenshots/images are NOT gated (see item 2).
