@@ -8,6 +8,63 @@ This playbook covers BOTH variants — a **Claude-based** bot (Anthropic-backed,
 
 ---
 
+## Capability doctrine — build maximally capable agents
+
+**Default to maximum capability. Under-exposing is the failure, not the cautious-correct choice.** When an agent sits in front of a backend, API, or toolset with N capabilities, expose ALL the safe ones in the FIRST version — not a thin "start small, add later" subset. "I'll add it later" is how an agent ends up feeling broken: staff hit a wall on a request the backend could already serve, and you've shipped something that looks finished but does a fraction of its job. The win is measured by what a user can get done in one message, not by how minimal or safe the tool surface looks.
+
+This doctrine is about exposing CAPABILITY. It does NOT loosen any safety constraint below. Breadth is achieved through GATING, not omission.
+
+### The triggering failure (read this so you don't repeat it)
+
+The **IT Helpdesk** Foundry agent (org-wide Teams bot, non-PHI) first shipped exposing only ~5 of its backend's ~30 available actions, on a "start small" instinct. Result: staff hit walls. It could run a single-day VM usage report but NOT a 7-day report; it under-delivered and felt broken. Dr. Yoo asked, pointedly, "why does this agent have so few capabilities? why did you build it this way?"
+
+The fix was ONE pass that took it from 5 exposed actions to 18 — every *safe* action — gated by tier, plus the weekly/7-day report. (Those 18 are the full SAFE set; the ~12 remaining are the deliberately-withheld RCE / raw-infrastructure tier that never belongs on a bot — see the tier table.) It now does daily + weekly reports, VM status/inventory, idle-VM detection, assignment lookups, cost, resource-existence checks, AND admin lifecycle actions. That 5 → 18 jump is the standard for every new agent's v1 — not a milestone to reach later.
+
+### Build step: enumerate first, then expose the whole safe map
+
+Before you write a single line of the agent's tool spec / OpenAPI / function definitions:
+
+1. **List everything the backend can actually do.** Read the backend's routes, scripts, helper functions, and existing admin tooling. Write down the complete action menu. Do not work from memory or from the handful of actions someone mentioned in the request.
+2. **Map each capability to a gate tier** (table below).
+3. **Expose every Tier 1-3 action in v1**, each wired with its tier's gate — and withhold every Tier-4 action from the spec entirely (it lives with the admin agents, not on the bot).
+4. **Document the full menu of the first three tiers in the tool/OpenAPI spec itself** — names, parameters, and a one-line description per action — so the model knows what it has and surfaces it to users. An action the model can't see it has is an action the user can't reach. Tier-4 actions (RCE / raw ARM / backend scripts) are NOT placed in the spec at all — an action absent from the schema is an action the model cannot call. This is the one case where omission IS the control. The documented action enum in the tool/OpenAPI spec IS your enumeration artifact — if it lists fewer entries than the backend has safe routes, you have under-exposed. Diff the spec's action list against the backend's route/helper inventory before shipping.
+
+If you find yourself shipping a subset, that is a signal to stop and justify *each omitted action against the tier table* — not a default you're allowed to take silently.
+
+### Gate tiers (this is how you get breadth safely)
+
+| Tier | Actions | Who can invoke | Mechanism |
+|---|---|---|---|
+| **Read / diagnostic / reporting** | status, inventory, usage reports (daily AND weekly/multi-day), idle detection, assignment/owner lookups, cost, resource-existence checks | **All staff** | No gate. Ship every one. |
+| **Mutating / lifecycle** | start, stop, resize, schedule changes, provisioning, reassignment | **Named admins only** (currently Dr. Kevin Yoo, Axel Manosalvas) | Check the `[From <name> via Teams]` tag on the inbound message. Perform only for a named admin. For everyone else: explain it's an admin-only change, say who can do it, and offer to note/route the request — never perform it, and never dead-end the user. |
+| **Irreversible / high blast radius** | VM deletion, anything destructive or hard to undo | Named admins, AND only via an explicit confirm phrase | A deterministic confirm-command verified by a secure handler — e.g. the user must send `DELETE VM <name> CONFIRM`, matched in code, NOT a free-form LLM tool the model can decide to call. (Same deterministic-handler pattern as the YO email handlers.) |
+| **Never on an org-wide bot** | arbitrary code execution (run arbitrary PowerShell/shell on machines), arbitrary infrastructure control (raw ARM PATCH/PUT/DELETE, running backend scripts or files directly) | Nobody, via a bot 70+ staff can message | These stay with the admin agents (Claude Code / Codex). Do not expose them on a bot, even gated, even for an admin — and do not place them in the tool spec at all. |
+
+The first three tiers are how an org-wide bot gets to be broad and still safe. The fourth tier is the only thing you genuinely withhold — and it's withheld by *which agent owns it* and by *keeping it out of the schema*, not by crippling the bot's legitimate surface.
+
+Capable does not mean reckless. A bot that exposes 18 actions across the first three tiers is both more capable AND more safely governed than one that exposes 5 ungated read actions and silently can't do the rest.
+
+### Universal capabilities every new agent ships with from v1
+
+These are not optional add-ons; an agent missing any of them is incomplete on day one:
+
+- **Image input** — it can see screenshots and images users attach (staff paste error screenshots constantly; an agent that's blind to them feels broken).
+- **@mentions the relevant person** — renders `<at>First Last</at>` so the right human actually gets pinged.
+- **Real table cards** — tabular output (inventories, usage reports, lookups) renders as actual table cards, not a wall of text.
+- **Owns its requests** — it does the work itself. It never punts the user to "@Claude / @Codex / ask the RPS chat" EXCEPT where that hand-off IS the documented self-service mechanism (e.g. the AVD web-allowlist self-serve flow). Routing-as-a-dodge is a defect; routing-as-the-designed-path is fine.
+
+### Hard safety constraints that survive this doctrine
+
+Being maximally capable never overrides any of these:
+
+- **Never let an LLM see or handle passwords.** Credential capture is intercepted in responder middleware before the model call; the model never sees, echoes, or stores a password.
+- **PHI only on BAA-covered Microsoft services** (GA Azure OpenAI / Microsoft-hosted models). This doctrine widens capability *breadth*; it does NOT relax PHI/BAA placement rules. A more capable bot is not a license to route PHI somewhere uncovered.
+- **Never tear down or delete an existing bot unsolicited** (separate standing rule — requires an explicit verbal order from Dr. Yoo for that specific bot).
+- **No paternalistic payment/credential gates on Dr. Yoo's own bots** — don't bolt on "stop at payment" / "don't enter the card" rules; that scope is Dr. Yoo's to set.
+- **The gating tiers above stay intact.** "Expose everything safe" means everything in the first three tiers with its gate wired — not removing the gates, and not promoting Tier-4 arbitrary-code / raw-infra actions onto the bot.
+
+---
+
 ## ASK FIRST — five required decisions
 
 **Before doing any work, capture all five decisions in writing. Do not guess unresolved fields.** If Dr. Yoo's request already explicitly answers one or more of them, **do not re-ask those answered fields**; record them and only ask for the remaining unresolved decisions. A wrong assumption on any unresolved field costs hours of rework and can leave orphan Azure resources / catalog entries that have to be cleaned up by hand.
@@ -451,6 +508,7 @@ None, currently. Tier 2 covers every authorized bot in the fleet. If you ever wa
 - **Use the YooMD chat token for catalog uploads.** Use AppPublisher.
 - **Skip the preflight policy check.** Build-then-install when the gate is closed wastes hours and leaves orphan state.
 - **Mint a new client_secret without saving it to the vault as a backup first.** Lost secrets can't be recovered, only rotated.
+- **Ship a thin subset of the backend's capabilities and "add the rest later."** Under-exposing is the failure mode, not the cautious choice — it leaves staff hitting walls on requests the backend could already serve, and the agent feels broken (the IT Helpdesk shipped ~5 of ~30 actions and couldn't do a 7-day report; one pass took it from 5 to 18 — the full SAFE set — gated by tier). Enumerate the backend's FULL action set first, then expose every safe action in v1, gated by tier (read = all staff; lifecycle = admin-gated via the `[From <name> via Teams]` tag; irreversible = deterministic confirm-command). If you ship fewer actions than the backend safely supports, justify EACH omission against the tier table — a thin starter subset is not an allowed default. The one tier you genuinely withhold — arbitrary code execution and raw ARM/infra control — stays with Claude Code / Codex and is kept OUT of the bot's spec entirely; never on a bot 70+ staff can message, even gated.
 
 ---
 
