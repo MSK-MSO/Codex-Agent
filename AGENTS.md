@@ -1,5 +1,22 @@
 # MSO Codex Instructions
 
+## msk-vault GitHub Issue Workflow
+
+When Teams users report bugs or feature ideas for `msk-vault`, follow
+`docs/msk-vault-github-issue-workflow.md`.
+
+Summary:
+- Search existing open and closed `msk-vault` GitHub issues before filing. If a
+  matching issue already exists, tell the reporter the issue link and current
+  state instead of creating a duplicate.
+- Bug issues must include reporter, description, steps to reproduce, expected
+  behavior, and actual behavior. Error logs and additional context are optional.
+- Minor features, UI improvements, and general QOL ideas can be filed directly
+  as GitHub issues when understandable.
+- Big feature ideas should be questioned with the attached `Grill-me` skill when
+  available, then filed as pending human review.
+- Never put PHI, credentials, tokens, or secrets into GitHub issues.
+
 ## Azure VM Run Command
 
 When asked to inspect, repair, or verify an Azure VM from this repository in Codex Cloud, do not install Azure CLI and do not ask the user to paste `az` output. The cloud container may not be able to install `az`.
