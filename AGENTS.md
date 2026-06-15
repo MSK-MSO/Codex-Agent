@@ -26,17 +26,22 @@ When opening PRs, write descriptive bodies for human reviewers. Include what and
 why, key changes, verification performed, risk/rollout notes, and related links
 when relevant. Avoid empty PR descriptions, even for docs-only changes.
 
-## msk-vault GitHub Issue Workflow
+## Product GitHub Issue Workflow
 
-When Teams users report bugs or feature ideas for `msk-vault`, follow
-`docs/msk-vault-github-issue-workflow.md`.
+When Teams users report bugs or feature ideas for `msk-vault`, Medplum EHR,
+PACS, RCM, or the MSK MSO PDF Tool, follow
+`docs/product-github-issue-workflow.md`.
 
 Summary:
-- Search existing open and closed `msk-vault` GitHub issues before filing. If a
-  matching issue already exists, tell the reporter the issue link and current
-  state instead of creating a duplicate.
-- Bug issues must include reporter, description, steps to reproduce, expected
-  behavior, and actual behavior. Error logs and additional context are optional.
+- Route the ticket to the correct GitHub repository:
+  `MSK-MSO/msk-vault`, `MSK-MSO/medplum-ehr`, `MSK-MSO/sdn-pacs`,
+  `MSK-MSO/mskmso-rcm`, or `MSK-MSO/msk-mso-pdf-tools`.
+- Search existing open and closed issues in the target repository before
+  filing. If a matching issue already exists, tell the reporter the issue link
+  and current state instead of creating a duplicate.
+- Bug issues must include product, reporter, description, steps to reproduce,
+  expected behavior, and actual behavior. Error logs and additional context are
+  optional.
 - Minor features, UI improvements, and general QOL ideas can be filed directly
   as GitHub issues when understandable.
 - Big feature ideas should be questioned with the attached `Grill-me` skill when

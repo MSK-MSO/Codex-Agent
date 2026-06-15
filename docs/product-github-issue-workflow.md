@@ -1,12 +1,27 @@
-# msk-vault GitHub Issue Workflow
+# Product GitHub Issue Workflow
 
-Use this workflow when a Teams user reports a bug or suggests a feature for
-`msk-vault` and asks the agent to open or file it in GitHub.
+Use this workflow when a Teams user reports a bug or suggests a feature for a
+supported MSK-MSO product and asks the agent to open, file, or track it in
+GitHub.
+
+## Product Routing
+
+Choose the target GitHub repository from the product named in the report:
+
+- `msk-vault`: `MSK-MSO/msk-vault`
+- Medplum EHR: `MSK-MSO/medplum-ehr`
+- PACS: `MSK-MSO/sdn-pacs`
+- RCM: `MSK-MSO/mskmso-rcm`
+- PDF Tool / MSK MSO PDF Tools: `MSK-MSO/msk-mso-pdf-tools`
+
+If the report clearly names a legacy or adjacent repository, use the explicitly
+named repository instead and mention that routing in the Teams reply. If the
+product is ambiguous, ask one short clarifying question before filing.
 
 ## Duplicate Check
 
 Before opening a new issue, search existing open and closed GitHub issues in the
-`msk-vault` repository for the same bug or feature.
+target repository for the same bug or feature.
 
 If a matching issue already exists:
 
@@ -22,8 +37,9 @@ If a matching issue already exists:
 
 ## Bug Reports
 
-Open a GitHub issue in the `msk-vault` repository with these required sections:
+Open a GitHub issue in the target repository with these required sections:
 
+- Product: the affected product.
 - Reporter: the name of the person who reported the bug.
 - Description: a concise summary of the bug.
 - Steps to reproduce: numbered steps when available; otherwise `Not provided`.
@@ -39,13 +55,13 @@ Include these optional sections when available:
 
 ## Feature Ideas
 
-Accept feature ideas for `msk-vault` as GitHub issues too.
+Accept feature ideas for supported products as GitHub issues too.
 
 For minor features, UI improvements, and general quality-of-life requests:
 
 1. Open a GitHub issue directly when the request is understandable and no
    matching issue already exists.
-2. Include the reporter name.
+2. Include the product and reporter name.
 3. Use the repository's existing enhancement, UI, or QOL labels when available.
 4. Include a concise description, user benefit, and any relevant context.
 
@@ -65,28 +81,32 @@ For big features:
 
 1. Identify whether the report is a bug, minor feature/QOL/UI improvement, or
    big feature.
-2. Identify the reporter from the Teams sender, or from the message text if
+2. Identify the product and target repository from the report.
+3. Identify the reporter from the Teams sender, or from the message text if
    someone is reporting on behalf of another person.
-3. Search existing open and closed `msk-vault` GitHub issues for the same bug or
-   feature.
-4. If a matching issue exists, report the link and current state to the reporter
+4. Search existing open and closed GitHub issues in the target repository for the
+   same bug or feature.
+5. If a matching issue exists, report the link and current state to the reporter
    instead of creating a duplicate.
-5. Extract relevant details from the message and attachments.
-6. If a bug report is missing a required field but enough detail exists to file
+6. Extract relevant details from the message and attachments.
+7. If a bug report is missing a required field but enough detail exists to file
    a useful issue, file it and mark missing fields as `Not provided`.
-7. If a minor feature request is understandable, file it directly.
-8. If a big feature request is vague or broad, use Grill-me questioning before
+8. If a minor feature request is understandable, file it directly.
+9. If a big feature request is vague or broad, use Grill-me questioning before
    filing.
-9. Keep PHI, credentials, tokens, and secrets out of GitHub issues. If sensitive
+10. Keep PHI, credentials, tokens, and secrets out of GitHub issues. If sensitive
    material is present, summarize only non-sensitive facts and state that
    sensitive details were omitted.
-10. Reply in Teams with the created issue link and a short summary of what was
+11. Reply in Teams with the created issue link and a short summary of what was
    filed, or with the existing issue link and current state when no new issue was
    created.
 
 ## Bug Issue Template
 
 ```markdown
+## Product
+<product>
+
 ## Reporter
 <name>
 
@@ -112,6 +132,9 @@ For big features:
 ## Feature Issue Template
 
 ```markdown
+## Product
+<product>
+
 ## Reporter
 <name>
 
