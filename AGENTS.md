@@ -22,6 +22,10 @@ agent changes to a short-lived branch scoped to the task. Do not commit or push
 directly to `main`/`Main`. Branches should be named for the work, kept narrow,
 and retired after review/merge.
 
+When opening PRs, write descriptive bodies for human reviewers. Include what and
+why, key changes, verification performed, risk/rollout notes, and related links
+when relevant. Avoid empty PR descriptions, even for docs-only changes.
+
 ## msk-vault GitHub Issue Workflow
 
 When Teams users report bugs or feature ideas for `msk-vault`, follow
