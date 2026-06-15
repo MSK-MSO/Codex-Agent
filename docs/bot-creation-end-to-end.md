@@ -583,3 +583,61 @@ Microsoft uses the same field name `"id"` in different POST responses to mean di
 ## Bot returns "Had trouble generating a reply"
 
 Different problem from anything above. The bot publish succeeded and the user CAN reach it, but every reply is an error. See [`bot-empty-reply-diagnosis.md`](bot-empty-reply-diagnosis.md) — it walks through the three patterns (rate limit, broken `run_codex` from code injection, Graph 404 red herring) and exactly which logs distinguish them.
+
+---
+
+## Variant 3 — Foundry-backed bot (Fleet Architect pattern, added 2026-06-10)
+
+A third variant exists alongside Claude- and Codex-based bots: the bot's brain is an **Azure AI Foundry agent** (project `agent-platform` on resource `mskmso-foundry`, rg `rg-mskmso-ai`, East US 2). First instance: **Fleet Architect** (appId `15472e97-43e5-46f8-9776-9ff0e6aafb19`, Bot resource `OpenClaw-FleetArchitect`, port 4005 on openclaw-vm).
+
+Use this variant when the bot should run on metered Azure billing (no consumer Claude/Codex seat, no weekly caps, no OAuth-token expiry) and/or needs Foundry features (model router, per-agent token caps, Foundry observability, BAA-covered Azure OpenAI models for future PHI workloads).
+
+**What's identical to the other variants:** Phase 0 preflight, Phase 1 (Entra app + Bot Service + Teams channel), systemd/nginx layout, manifest build, Phase 4 sideload flow, az-guard refresh, the never-tear-down rule.
+
+**What diverges:**
+- **No model account onboarding (decision 2 is moot).** The responder talks to the Foundry project's Responses API with the resource API key. Env file `/etc/claude-tokens/<short>.env` carries `FOUNDRY_API_KEY=<key1 of mskmso-foundry>` + `ALLOWED_AAD_OIDS=...` (empty value = org-wide; Bot Framework JWT still enforced).
+- **Responder is plumbing only** (`fleet-architect-responder.py` is the template): poll activities.jsonl → POST `{project-endpoint}/openai/v1/responses` with `{"agent_reference":{"type":"agent_reference","name":"<agent>"}, "input":..., "previous_response_id": <per-conversation, state.json>}` → reply via Bot Connector (`https://api.botframework.com/.default` client-credentials with the bot's own appId/secret; activity posted to the incoming serviceUrl). On HTTP error with a previous_response_id, retry once without it (stale thread).
+- **Behavior tuning happens in Foundry, not on the VM.** To change instructions/tools: POST a new agent version to `{project-endpoint}/agents/<agent>/versions?api-version=v1` (body needs `name` + `definition{kind:"prompt", model, instructions, tools}`). Do NOT edit responder prompts — there are none.
+- **Two Graph/API gotchas hit on 2026-06-10:** (a) directory replication race — `addPassword` right after app creation can 404 (`Request_ResourceNotFound`); retry with ~12s backoff. (b) `POST /agents` with an existing name returns `conflict` — new versions go to `/agents/<name>/versions`.
+
+**Catalog-publish slow-ingestion incident (2026-06-10/11), read before declaring quarantine:** the AppPublisher delegated upload (`POST /v1.0/appCatalogs/teamsApps`) returned an app id, then the app was invisible for HOURS — GET by id 404, absent from `externalId` and `displayName` filters for well past the playbook's 5-minute poll. It looked exactly like the silent anti-abuse quarantine. It wasn't: by the next morning the app sat in the catalog as `publishingState: published`, `distributionMethod: organization`, under the same id the upload returned. Lessons now baked into this playbook:
+1. The 5-minute poll in 3.3 can produce a FALSE quarantine verdict. Before declaring quarantine, re-run the read-only catalog checks (by id AND `$filter=externalId eq '<manifest uuid>'`) after a few hours — and the next morning — before writing the upload off.
+2. Do still honor the no-retry rule while waiting: a second programmatic upload of the same manifest while the first is mid-ingestion is what actually creates conflicts.
+3. A manual admin-center upload attempted during/after ingestion fails with "there's already an app in the catalog with the same app ID" — that duplicate error is itself proof the original upload landed. Treat it as success, find the app in Manage apps, and verify its status there.
+4. True quarantine (per the 2026-05 era incidents) still exists; the discriminator is time. Invisible after 24h = quarantined. Invisible after 10 minutes = probably just slow.
+
+
+### Variant 3 standard capability: screenshot / image vision (added 2026-06-11)
+
+Every Foundry-backed agent is built WITH image vision by default. The responder template (`/home/azureuser/agent-templates/_template-responder.py`, marker `IMAGE_SUPPORT_V1`) pulls image attachments from inbound Teams activities (pasted screenshots = `smba.trafficmanager.net/.../v3/attachments/...` fetched with the bot connector token; rich-card images = Graph `hostedContents` fetched with the app token), base64-encodes them, and sends them to the Responses API as `input_image` content parts. Caps: 4 images/message, 5 MB each. The router/GPT-5.x models are multimodal, so no model change is needed.
+
+**Always on for every agent — including PHI agents** (images go to Azure OpenAI / Microsoft-hosted models inside the Microsoft BAA-covered boundary, so screenshots are HIPAA-compliant; no screenshot guardrail). **Provisioning inherits it automatically** — new agents are cloned from the canonical templates in `/home/azureuser/agent-templates/`, which already contain `IMAGE_SUPPORT_V1`. Do NOT strip it. Also add the agent-instruction line: "You CAN see images/screenshots that staff attach; only say you can't if none was provided."
+
+
+---
+
+## UNIVERSAL REQUIREMENTS — every agent, no exceptions
+
+Every MSK MSO Foundry-backed agent (current and future) MUST have all of the following. New builds inherit them from the canonical templates in `/home/azureuser/agent-templates/`; do not strip any.
+
+1. **Foundry-backed, Microsoft BAA boundary.** Brain is a Foundry agent on a direct GA Azure OpenAI deployment (default gpt-5-4-mini — reliable tool-calling + multimodal). Do NOT use model-router for tool-using agents (it intermittently 400s on tool calls — see note below). PHI agents use a pinned GA deployment. Everything stays inside the Microsoft HIPAA/BAA-covered ecosystem — no consumer AI, no non-Microsoft processors for PHI.
+2. **Screenshot / image vision — ALWAYS ON, no guardrail.** Marker `IMAGE_SUPPORT_V1` in the responder. Applies to ALL agents including PHI/Prep agents. Screenshots are processed inside the Microsoft BAA-covered Azure OpenAI boundary, so they are HIPAA-compliant. There is NO `IMG_PRELAUNCH` gate — do not add one.
+3. **Exact token + cost metering.** Per-call `usage.jsonl` logging input/output/total tokens; `build_usage_context()` computes exact dollars from the published Azure price table (incl. router markup). Agents answer cost/usage questions with real numbers, never "tell me which model," never invented figures.
+4. **Transient-error retry.** `ask_foundry` retries on 400/408/429/5xx (3 attempts, backoff) so a momentary Foundry slowdown never surfaces "I had trouble reaching the Foundry agent."
+5. **Table rendering.** Markdown pipe tables are converted to Adaptive Card tables before sending (reports/VM lists render as real grids, never collapsed text).
+6. **@mention / tag individuals — REQUIRED.** Responder marker `MENTION_SUPPORT_V1`: it fetches the conversation roster (connector `/v3/conversations/{id}/members`), resolves any `<at>Name</at>` the model writes into real Teams mention entities (so the person is tagged AND notified), strips unresolved tags, and injects the taggable-name list into group-chat input. Agent instructions tell the model to tag the relevant person (asker, hand-off target) by default. Without this, an agent writing "@John" notifies no one.
+7. **Group-chat support.** Manifest carries `groupChat` scope + `webApplicationInfo` + `authorization.resourceSpecific` (RSC) so the bot can be added to and respond in group chats (when @mentioned).
+8. **Conversation continuity.** `previous_response_id` per conversation in `state.json`.
+9. **Access gate.** `ALLOWED_AAD_OIDS` in the env file (empty = org-wide; JWT bot-framework auth always enforced regardless).
+10. **Identity protection.** Bot AAD identity registered in `/etc/az-guard/protected-bot-ids` (`sudo /usr/local/sbin/az-guard-refresh-bot-ids` after creating).
+11. **Distinct icon.** A meaningful color + outline icon in the practice palette (navy bg, cyan-blue elements, lime accent) — never the default "C".
+12. **Plain-language style + standard report format** baked into the agent instructions; usage/VM reports follow the canonical `# | Name | VM | VM Size | Runtime | Sessions | Est. $/hr | Est. Cost` table.
+
+PHI agents add: pinned GA Azure OpenAI model (not router), web search off, and a launch gate on the abuse-monitoring exemption for going hands-on with patient *workflows* — but screenshots/images are NOT gated (see item 2).
+
+
+### ⚠️ Model choice: use gpt-5.4-mini for tool-using agents, NOT model-router (2026-06-12)
+
+Discovered 2026-06-12: the Foundry **model-router deployment intermittently 400s on tool/function calls** ("There was an issue with your request") while plain chat works. The identical OpenAPI tool succeeds on a direct **gpt-5-4-mini** deployment. IT Helpdesk and Fleet Architect (both tool-using) were moved off the router to gpt-5-4-mini and tool calls became reliable. 
+
+**Rule:** create the Foundry agent on a direct GA deployment (default **gpt-5-4-mini** — cheap, multimodal, reliable tools). Reserve model-router only for chat-only agents with no tools, and re-test tool-calling on the router before trusting it. PHI agents already use a pinned GA model, so they were unaffected.
